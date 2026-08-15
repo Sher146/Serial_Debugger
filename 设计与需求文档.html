@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Serial Monitor — 产品需求与技术设计 V1.0</title>
+  <style>
+    :root {
+      --bg: #f5f5f7; --surface: rgba(255,255,255,.82); --text: #1d1d1f;
+      --muted: #6e6e73; --line: rgba(60,60,67,.18); --blue: #0071e3;
+      --blue-soft: #edf5ff; --callout: #f1f5f9; --code: #f3f4f6;
+      --shadow: 0 16px 42px rgba(0,0,0,.08); --radius: 18px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg:#111113; --surface:rgba(30,30,32,.86); --text:#f5f5f7; --muted:#a1a1a6; --line:rgba(235,235,245,.18); --blue:#2997ff; --blue-soft:#152b43; --callout:#1c2630; --code:#1d1d20; --shadow:0 16px 42px rgba(0,0,0,.3); }
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:-apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", Arial, sans-serif; line-height:1.72; -webkit-font-smoothing:antialiased; }
+    .shell { max-width: 1320px; margin:0 auto; padding: 28px 28px 64px; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:22px; color:var(--muted); font-size:14px; }
+    .brand { font-weight:700; color:var(--text); letter-spacing:-.02em; }
+    .actions { display:flex; gap:8px; }
+    button { border:1px solid var(--line); border-radius:999px; padding:7px 12px; background:var(--surface); color:var(--text); font:inherit; cursor:pointer; }
+    .layout { display:grid; grid-template-columns:250px minmax(0, 1fr); gap:28px; align-items:start; }
+    nav { position:sticky; top:24px; padding:16px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:0 8px 24px rgba(0,0,0,.04); backdrop-filter: blur(18px); }
+    nav h2 { font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin:0 0 8px; }
+    nav a { display:block; padding:5px 7px; color:var(--muted); text-decoration:none; font-size:13px; line-height:1.35; border-radius:7px; }
+    nav a:hover { color:var(--blue); background:var(--blue-soft); }
+    main { min-width:0; background:var(--surface); border:1px solid var(--line); border-radius:24px; padding:clamp(26px, 4vw, 64px); box-shadow:var(--shadow); backdrop-filter: blur(20px); }
+    .hero-title { margin:0; font-size:clamp(38px, 6vw, 64px); letter-spacing:-.055em; line-height:1.08; color:var(--text); }
+    .hero-subtitle { margin:12px 0 30px; color:var(--blue); font-size:clamp(18px, 2.4vw, 25px); letter-spacing:-.02em; }
+    h2 { margin:58px 0 16px; padding-top:8px; color:var(--text); font-size:clamp(28px, 3.6vw, 38px); line-height:1.18; letter-spacing:-.04em; scroll-margin-top:28px; }
+    h3 { margin:32px 0 10px; color:var(--blue); font-size:clamp(20px, 2.4vw, 25px); line-height:1.28; letter-spacing:-.02em; scroll-margin-top:28px; }
+    h4 { margin:23px 0 8px; color:var(--text); font-size:18px; }
+    p { margin:0 0 14px; }
+    ul, ol { margin:8px 0 20px; padding-left:1.35em; }
+    li { margin:6px 0; padding-left:.18em; }
+    li::marker { color:var(--blue); }
+    .callout { margin:20px 0 24px; padding:16px 18px; background:var(--callout); border:1px solid color-mix(in srgb, var(--blue) 16%, var(--line)); border-radius:14px; }
+    .callout p:last-child { margin-bottom:0; }
+    .callout strong { color:var(--blue); }
+    .table-wrap { margin:18px 0 28px; overflow:auto; border:1px solid var(--line); border-radius:13px; }
+    table { width:100%; border-collapse:collapse; min-width:640px; font-size:14px; }
+    th { background:color-mix(in srgb, var(--blue) 8%, var(--surface)); text-align:left; color:var(--text); font-weight:650; }
+    th, td { padding:12px 14px; border-right:1px solid var(--line); border-bottom:1px solid var(--line); vertical-align:top; }
+    th:last-child, td:last-child { border-right:0; } tr:last-child td { border-bottom:0; }
+    td p, th p { margin:0; }
+    pre { margin:18px 0 26px; padding:16px 18px; overflow:auto; border-radius:13px; background:var(--code); border:1px solid var(--line); font:12.5px/1.65 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; white-space:pre-wrap; word-break:break-word; }
+    code { font:inherit; }
+    @media (max-width:900px) { .shell { padding:18px 14px 44px; } .layout { grid-template-columns:1fr; } nav { position:relative; top:auto; } main { border-radius:18px; padding:26px 18px; } nav { max-height:260px; overflow:auto; } }
+    @media print { body { background:white; } .topbar, nav { display:none; } .shell { max-width:none; padding:0; } .layout { display:block; } main { border:0; box-shadow:none; padding:0; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar"><div><span class="brand">Serial Monitor</span><span> · 产品需求与技术设计 V1.0</span></div><div class="actions"><button onclick="window.print()">打印 / 导出 PDF</button></div></header>
+    <div class="layout">
+      <nav aria-label="文档目录"><h2>目录</h2><div id="toc"></div></nav>
+      <main><h1 class="hero-title"><strong>Serial Monitor</strong></h1>
+<p class="hero-subtitle">macOS 原生串口调试助手 · 产品需求与技术设计</p>
+<aside class="callout"><p><strong>文档定位  </strong>本文件是 V1.0 的开发基线。它将用户需求转化为可实施的产品范围、系统架构、模块接口、数据规则、依赖选择、验收标准和发布约束。</p></aside>
+<div class="table-wrap"><table><tr><th><p><strong>字段</strong></p></th><th><p><strong>内容</strong></p></th></tr><tr><td><p>版本</p></td><td><p>V1.0</p></td></tr><tr><td><p>目标平台</p></td><td><p>macOS 14 及以上；macOS 26 采用系统 Liquid Glass 视觉能力</p></td></tr><tr><td><p>产品形态</p></td><td><p>本地桌面应用；单窗口、多会话为后续能力</p></td></tr><tr><td><p>核心框架</p></td><td><p>SwiftUI + 少量 AppKit + Swift Concurrency</p></td></tr><tr><td><p>文档状态</p></td><td><p>可用于原型、开发任务拆分、测试用例和验收</p></td></tr><tr><td><p>范围取舍</p></td><td><p>V1.0 优先 macOS；Windows / Linux 以可迁移核心设计保留为后续版本</p></td></tr></table></div>
+<h3 id="sec-1"><strong>核心决策</strong></h3>
+<ul>
+<li>UI 以 SwiftUI 为主，直接采用 macOS 原生导航、菜单、快捷键、窗口和系统材质；仅在文件保存、警告弹窗、复杂文本编辑等需要时使用 AppKit。</li>
+<li>串口访问通过独立的 SerialCore 抽象层完成；UI、日志、预设和自动发送不得直接依赖某个第三方串口库。</li>
+<li>所有 RX/TX 原始数据均保留为字节数组；ASCII/HEX 只是展示或输入编码方式，切换模式不得改变原始数据。</li>
+<li>普通自动发送与预设循环发送互斥；发送、记录、状态机由单一会话协调器串行裁决。</li>
+</ul>
+<h2 id="sec-1"><strong>目录与阅读方式</strong></h2>
+<div class="table-wrap"><table><tr><th><p><strong>章节</strong></p></th><th><p><strong>阅读目的</strong></p></th></tr><tr><td><p>1–3</p></td><td><p>明确产品边界、平台范围和角色场景</p></td></tr><tr><td><p>4–7</p></td><td><p>定义页面、功能和数据处理规则</p></td></tr><tr><td><p>8–12</p></td><td><p>定义架构、依赖、接口、数据模型与并发策略</p></td></tr><tr><td><p>13–17</p></td><td><p>定义日志、设置、菜单、异常处理与安全要求</p></td></tr><tr><td><p>18–20</p></td><td><p>定义质量指标、测试验收、交付与后续演进</p></td></tr></table></div>
+<aside class="callout"><p><strong>范围冲突说明  </strong>原始需求同时要求 SwiftUI 原生风格和 macOS / Windows / Linux 支持。SwiftUI 是 Apple 平台框架，不能直接交付 Windows / Linux 桌面端；因此本版本将“跨平台”调整为核心数据与协议逻辑可迁移，实际可运行产品范围为 macOS。</p></aside>
+<h2 id="sec-2"><strong>1. 产品目标与成功标准</strong></h2>
+<p>Serial Monitor 是面向 MCU、传感器、USB-UART、RS-232/RS-485 转换器和 AT 指令设备的本地串口调试工具。它必须让使用者在不理解底层实现的前提下，快速选择串口、可靠收发字节流、复用常用命令并保存可追溯日志。</p>
+<div class="table-wrap"><table><tr><th><p><strong>目标</strong></p></th><th><p><strong>可观测成功标准</strong></p></th></tr><tr><td><p>快速开始</p></td><td><p>从启动到成功打开一个已识别串口，典型操作不超过 3 步。</p></td></tr><tr><td><p>数据可信</p></td><td><p>每条 RX/TX 记录都可追溯到原始字节、时间、方向、显示格式和发送来源。</p></td></tr><tr><td><p>高频可用</p></td><td><p>持续接收时 UI 不阻塞；缓存达到上限时有确定的截断策略。</p></td></tr><tr><td><p>macOS 原生体验</p></td><td><p>菜单、快捷键、窗口行为、深浅色和材质与系统习惯一致。</p></td></tr><tr><td><p>可维护</p></td><td><p>串口库、日志格式、持久化和 UI 解耦，可替换或扩展而不重写业务逻辑。</p></td></tr></table></div>
+<h2 id="sec-3"><strong>2. 产品范围、非范围与版本边界</strong></h2>
+<h3 id="sec-3-1"><strong>2.1 V1.0 范围</strong></h3>
+<ul>
+<li>单一活跃串口会话：发现、参数配置、打开/关闭、连接状态与错误。</li>
+<li>字节流收发：ASCII / HEX，时间戳，暂停显示，清空与自动滚动。</li>
+<li>单条自动发送、可排序预设、预设循环发送、日志记录和本地设置。</li>
+<li>macOS 菜单、快捷键、帮助入口、关于窗口、异常退出防护。</li>
+</ul>
+<h3 id="sec-3-2"><strong>2.2 明确不在 V1.0 范围</strong></h3>
+<ul>
+<li>网络、蓝牙、TCP/UDP、MQTT 或 WebSocket 通信。</li>
+<li>数据库、云同步、多用户协作、账号体系。</li>
+<li>协议解析器、图表、脚本语言、插件市场、自动化测试脚本录制。</li>
+<li>多串口同时连接；此能力应在后续通过 SessionManager 扩展。</li>
+<li>Windows / Linux 可执行应用。</li>
+</ul>
+<h3 id="sec-3-3"><strong>2.3 平台策略</strong></h3>
+<div class="table-wrap"><table><tr><th><p><strong>层级</strong></p></th><th><p><strong>V1.0 选择</strong></p></th><th><p><strong>跨平台处理</strong></p></th></tr><tr><td><p>UI</p></td><td><p>SwiftUI + AppKit；仅 macOS。</p></td><td><p>后续替换为 Flutter/Tauri UI 时重用 Core 规则与持久化格式。</p></td></tr><tr><td><p>业务规则</p></td><td><p>纯 Swift Domain / Application 层。</p></td><td><p>避免使用 AppKit 类型、视图状态或第三方库类型。</p></td></tr><tr><td><p>串口适配</p></td><td><p>macOS SerialCore。</p></td><td><p>以协议接口隔离；Linux 可实现 termios 适配器，Windows 另行实现。</p></td></tr><tr><td><p>持久化</p></td><td><p>Codable JSON + UserDefaults / Application Support。</p></td><td><p>JSON Schema 版本化，可迁移。</p></td></tr></table></div>
+<h2 id="sec-4"><strong>3. 用户角色与关键场景</strong></h2>
+<div class="table-wrap"><table><tr><th><p><strong>角色</strong></p></th><th><p><strong>典型任务</strong></p></th><th><p><strong>关键体验</strong></p></th></tr><tr><td><p>嵌入式工程师</p></td><td><p>查看 MCU 日志、发送调试指令、保存问题现场。</p></td><td><p>快速重连、HEX/ASCII 切换、稳定的大文本输出。</p></td></tr><tr><td><p>硬件测试人员</p></td><td><p>按固定报文轮询设备、验证回包、导出日志。</p></td><td><p>预设循环、明确发送来源、无效 HEX 拦截。</p></td></tr><tr><td><p>现场技术支持</p></td><td><p>识别 USB-UART、留存诊断日志、交给研发复现。</p></td><td><p>端口刷新、错误原因、日志文件易定位。</p></td></tr></table></div>
+<aside class="callout"><p><strong>主路径  </strong>选择端口 → 校验通信参数 → 打开 → 观察 RX → 发送单条 / 预设 → 按需要开始日志 → 关闭端口并结束日志。</p></aside>
+<h2 id="sec-5"><strong>4. 信息架构与页面需求</strong></h2>
+<div class="table-wrap"><table><tr><th><p><strong>页面 / 弹窗</strong></p></th><th><p><strong>职责</strong></p></th><th><p><strong>主要元素</strong></p></th></tr><tr><td><p>主工作区</p></td><td><p>完成单次串口调试会话。</p></td><td><p>连接工具栏、接收控制台、发送编辑器、自动发送区、预设抽屉、状态栏。</p></td></tr><tr><td><p>设置窗口</p></td><td><p>管理跨会话偏好。</p></td><td><p>通用、显示、数据格式、缓存、日志、会话与预设六类设置。</p></td></tr><tr><td><p>预设编辑表单</p></td><td><p>创建或修改单条可发送命令。</p></td><td><p>名称、内容、ASCII/HEX、启用、可选备注。</p></td></tr><tr><td><p>日志保存面板</p></td><td><p>开始 / 停止记录并展示当前文件。</p></td><td><p>目录、文件名预览、大小、轮转策略、打开所在位置。</p></td></tr><tr><td><p>错误提示 / 恢复提示</p></td><td><p>解释可执行错误并提供下一步。</p></td><td><p>错误摘要、详细原因、重试 / 刷新 / 关闭。</p></td></tr><tr><td><p>关于与帮助</p></td><td><p>说明版本、许可证、快捷键和问题排查。</p></td><td><p>应用版本、运行环境、文档链接、常见问题。</p></td></tr></table></div>
+<h3 id="sec-5-1"><strong>4.1 主工作区布局</strong></h3>
+<p>采用原生三段式单窗口：顶部为连接与全局状态工具栏；中部为可扩展的接收记录区；底部为发送区。预设以可收起的右侧检查器或底部抽屉呈现，避免挤压高频使用的接收控制台。窗口最小尺寸建议 980 × 680 pt。</p>
+<div class="table-wrap"><table><tr><th><p><strong>区域</strong></p></th><th><p><strong>需求</strong></p></th></tr><tr><td><p>连接工具栏</p></td><td><p>Port 下拉、刷新、波特率和高级参数入口、连接/断开按钮、状态徽标。</p></td></tr><tr><td><p>接收控制台</p></td><td><p>按时间顺序展示记录，区分 RX/TX；提供暂停显示、清空、格式、时间戳、自动滚动。</p></td></tr><tr><td><p>发送编辑器</p></td><td><p>多行输入、ASCII/HEX 切换、行结束符、发送按钮、按 Cmd+Return 发送。</p></td></tr><tr><td><p>自动发送</p></td><td><p>间隔输入、开始/停止、运行提示；与预设循环互斥。</p></td></tr><tr><td><p>预设区</p></td><td><p>启用开关、拖动排序、单发、编辑、删除、循环设置。</p></td></tr><tr><td><p>状态栏</p></td><td><p>当前端口与参数、接收/发送计数、缓存占用、日志状态、最近错误。</p></td></tr></table></div>
+<h2 id="sec-6"><strong>5. 功能需求</strong></h2>
+<h3 id="sec-6-1"><strong>5.1 串口发现、配置与连接</strong></h3>
+<ul>
+<li>应用启动时按照设置自动刷新端口列表；用户可通过刷新按钮或菜单命令手动刷新。</li>
+<li>仅展示可打开的调用端口（macOS 优先展示 /dev/cu.*）；每项显示路径、可读名称和可用的 USB 厂商/产品信息。</li>
+<li>配置字段包括 Port、Baud Rate、Data Bits、Parity、Stop Bits、Flow Control。默认值可由设置恢复。</li>
+<li>连接状态为 disconnected、opening、connected、closing、error；任何时刻只能处于一个状态。</li>
+<li>打开失败、设备拔出、配置不支持、读写失败必须产生结构化错误：分类、系统错误码、用户可读说明、发生时间、是否可重试。</li>
+<li>连接过程中锁定影响打开过程的参数；关闭完成后才允许切换端口。</li>
+</ul>
+<h3 id="sec-6-2"><strong>5.2 接收记录</strong></h3>
+<ul>
+<li>从串口读取到的每个数据块立即生成一条 RX 原始记录；可以在显示层按连续到达数据块进行合并，但不得改变原始字节。</li>
+<li>ASCII 显示使用设置指定的文本编码。无法解码字节必须以可识别占位形式显示，不得静默丢弃。</li>
+<li>HEX 显示使用设置的字节分隔符、大小写和换行规则；例如 “55 AA 01”。</li>
+<li>暂停显示只冻结控制台的渲染和自动滚动，后台仍接收、入缓存和写日志；恢复后按时间顺序补显示。</li>
+<li>清空操作仅清除内存显示记录，不自动清空正在写入的日志文件；操作前无需关闭端口。</li>
+<li>记录数量或字节数达到设置阈值后，从最早记录开始安全淘汰；界面显示累计截断次数与最后一次截断时间。</li>
+</ul>
+<h3 id="sec-6-3"><strong>5.3 数据发送与校验</strong></h3>
+<div class="table-wrap"><table><tr><th><p><strong>项目</strong></p></th><th><p><strong>行为</strong></p></th></tr><tr><td><p>ASCII 模式</p></td><td><p>按设置编码转换为 Data；可选追加无 / LF / CR / CRLF。</p></td></tr><tr><td><p>HEX 模式</p></td><td><p>允许空白、换行和配置的分隔符；去除空白后必须为偶数个十六进制字符。非法字符、奇数字符数或空数据均不得发送。</p></td></tr><tr><td><p>触发方式</p></td><td><p>点击发送按钮或 Cmd+Return；普通 Return 在多行编辑器中换行。</p></td></tr><tr><td><p>前置条件</p></td><td><p>连接状态必须为 connected；否则保留输入内容并提示未连接。</p></td></tr><tr><td><p>记录</p></td><td><p>成功排入发送队列即创建 TX 记录，包含字节、编码、来源、预设 ID（如有）和发送结果。</p></td></tr><tr><td><p>失败</p></td><td><p>底层写入失败时把 TX 记录标记为 failed，显示原因；不可恢复错误转入 error 并停止所有自动发送。</p></td></tr></table></div>
+<h3 id="sec-6-4"><strong>5.4 自动发送与预设循环</strong></h3>
+<ul>
+<li>普通自动发送重复使用当前发送编辑器内容、当前模式和当前行结束符；间隔单位为毫秒，范围建议 10–3,600,000 ms。</li>
+<li>预设至少包含 id、名称、内容、编码模式、启用状态、排序序号、创建时间、更新时间和可选备注。</li>
+<li>预设循环只遍历已启用项目，严格按 sortOrder 执行；每次实际发送均生成带 presetID 和 presetName 快照的 TX 记录。</li>
+<li>普通自动发送与预设循环不得同时运行。启动其中之一前自动停止另一项，并在状态栏明确显示当前运行模式。</li>
+<li>关闭端口、设备拔出、不可恢复读写错误、用户点击停止或应用退出流程都会立即取消计时器与待发送队列。</li>
+<li>防止重入：下一次循环必须在上一次发送操作完成或明确失败后才开始；不得因 UI 卡顿而并发堆积定时任务。</li>
+</ul>
+<h2 id="sec-7"><strong>6. 日志与持久化需求</strong></h2>
+<h3 id="sec-7-1"><strong>6.1 日志文件</strong></h3>
+<p>日志采用 UTF-8 文本文件，推荐扩展名 .log；为便于机器处理，每一条记录使用一行 JSON Lines（JSONL）格式。用户界面可显示为易读文本，但落盘以固定字段保障可追溯性。</p>
+<pre><code>{&quot;timestamp&quot;:&quot;2026-08-15T18:04:12.235-05:00&quot;,&quot;direction&quot;:&quot;RX&quot;,&quot;format&quot;:&quot;hex&quot;,&quot;data&quot;:&quot;55 AA 01 00&quot;,&quot;bytesBase64&quot;:&quot;VaoBAA==&quot;,&quot;source&quot;:&quot;serial&quot;}<br>{&quot;timestamp&quot;:&quot;2026-08-15T18:04:13.010-05:00&quot;,&quot;direction&quot;:&quot;TX&quot;,&quot;format&quot;:&quot;ascii&quot;,&quot;data&quot;:&quot;AT+RST\r\n&quot;,&quot;bytesBase64&quot;:&quot;QVQrUlNUDQo=&quot;,&quot;source&quot;:&quot;manual&quot;}<br></code></pre>
+<div class="table-wrap"><table><tr><th><p><strong>要求</strong></p></th><th><p><strong>规则</strong></p></th></tr><tr><td><p>创建时机</p></td><td><p>用户开始记录或设置为自动记录且连接成功时创建。</p></td></tr><tr><td><p>文件名</p></td><td><p>默认 SerialMonitor_yyyyMMdd_HHmmss_&lt;port&gt;.log；端口名需安全清洗。</p></td></tr><tr><td><p>写入策略</p></td><td><p>串行异步写入；UI 不等待磁盘 I/O。写入失败必须停止日志并提示文件路径与错误。</p></td></tr><tr><td><p>轮转</p></td><td><p>达到阈值时按设置新建下一文件，名称追加 _001、_002；不自动删除旧文件。</p></td></tr><tr><td><p>结束行为</p></td><td><p>停止记录、关闭会话或退出前 flush 并关闭；异常退出允许下一次启动提示存在未正常结束日志。</p></td></tr></table></div>
+<h3 id="sec-7-2"><strong>6.2 本地配置与数据位置</strong></h3>
+<div class="table-wrap"><table><tr><th><p><strong>数据</strong></p></th><th><p><strong>建议位置</strong></p></th><th><p><strong>格式 / 策略</strong></p></th></tr><tr><td><p>应用偏好</p></td><td><p>UserDefaults</p></td><td><p>Codable 值或扁平偏好；每项有安全默认值。</p></td></tr><tr><td><p>预设与会话快照</p></td><td><p>~/Library/Application Support/SerialMonitor/</p></td><td><p>versioned JSON；原子写入：临时文件 + replace。</p></td></tr><tr><td><p>运行日志</p></td><td><p>用户选择目录；默认 ~/Documents/Serial Monitor Logs/</p></td><td><p>UTF-8 JSONL；不上传、不同步。</p></td></tr><tr><td><p>崩溃恢复标记</p></td><td><p>Application Support</p></td><td><p>记录日志是否正常 close；启动后清理或提示。</p></td></tr></table></div>
+<h2 id="sec-8"><strong>7. 设置与菜单命令</strong></h2>
+<h3 id="sec-8-1"><strong>7.1 设置</strong></h3>
+<div class="table-wrap"><table><tr><th><p><strong>分类</strong></p></th><th><p><strong>字段</strong></p></th><th><p><strong>生效方式</strong></p></th></tr><tr><td><p>串口默认值</p></td><td><p>默认参数、默认模式、启动时刷新。</p></td><td><p>新会话或下一次连接；当前连接参数不被静默修改。</p></td></tr><tr><td><p>显示与可读性</p></td><td><p>字号、等宽字体、行距、外观、时间戳、自动滚动。</p></td><td><p>即时生效，不丢失当前记录。</p></td></tr><tr><td><p>数据格式</p></td><td><p>文本编码、HEX 分隔、行结束符。</p></td><td><p>下一次显示或发送生效；不重写已有原始数据。</p></td></tr><tr><td><p>数据保留</p></td><td><p>最大记录数、最大字节数、截断提示。</p></td><td><p>即时生效；下调阈值后按最早优先裁剪。</p></td></tr><tr><td><p>日志</p></td><td><p>默认目录、命名规则、自动日志、轮转阈值。</p></td><td><p>新日志文件生效；进行中的日志保持当前策略。</p></td></tr><tr><td><p>会话与预设</p></td><td><p>恢复上次参数、恢复自动发送草稿、预设管理。</p></td><td><p>重启后恢复；自动发送不得在启动时自动恢复运行。</p></td></tr></table></div>
+<h3 id="sec-8-2"><strong>7.2 macOS 菜单与快捷键</strong></h3>
+<div class="table-wrap"><table><tr><th><p><strong>命令</strong></p></th><th><p><strong>建议快捷键</strong></p></th><th><p><strong>可用条件</strong></p></th></tr><tr><td><p>新建会话</p></td><td><p>Cmd+N</p></td><td><p>始终可用；V1.0 重置当前工作区，不打开第二窗口。</p></td></tr><tr><td><p>打开 / 关闭串口</p></td><td><p>Cmd+O / Cmd+W</p></td><td><p>按当前连接状态切换；opening / closing 时禁用。</p></td></tr><tr><td><p>发送数据</p></td><td><p>Cmd+Return</p></td><td><p>已连接、输入合法、非发送中。</p></td></tr><tr><td><p>开始 / 停止自动发送</p></td><td><p>Cmd+Shift+Return</p></td><td><p>已连接且当前发送内容、间隔合法。</p></td></tr><tr><td><p>开始 / 停止日志</p></td><td><p>Cmd+L</p></td><td><p>已连接；停止时始终可用。</p></td></tr><tr><td><p>清空接收记录</p></td><td><p>Cmd+K</p></td><td><p>有可清空的内存记录。</p></td></tr><tr><td><p>打开设置</p></td><td><p>Cmd+,</p></td><td><p>始终可用。</p></td></tr><tr><td><p>帮助 / 关于</p></td><td><p>F1 / 系统 About 菜单</p></td><td><p>始终可用。</p></td></tr></table></div>
+<h2 id="sec-9"><strong>8. 视觉与交互设计规范</strong></h2>
+<p>界面必须优先使用系统原生控件和布局语义，而不是仿制网页后台。目标是类似 Apple Console、Xcode 或系统设置的干净、轻量、可读的开发工具风格。</p>
+<div class="table-wrap"><table><tr><th><p><strong>维度</strong></p></th><th><p><strong>设计要求</strong></p></th></tr><tr><td><p>材质与层次</p></td><td><p>在支持的系统上使用系统 Material / Liquid Glass API；业务信息区保持足够不透明，避免长日志文字受背景干扰。</p></td></tr><tr><td><p>颜色</p></td><td><p>依赖系统 accent color、semantic colors 与深浅色；RX、TX、错误只使用可访问性足够的语义色，并辅以文本标签。</p></td></tr><tr><td><p>字体</p></td><td><p>控制台默认 SF Mono / Menlo 等宽字体；UI 沿用系统字体。用户可在设置中调节字体与字号。</p></td></tr><tr><td><p>状态</p></td><td><p>不用颜色单独表达状态：同时显示图标、文字和可读状态描述。</p></td></tr><tr><td><p>动效</p></td><td><p>仅用于状态变更、抽屉展开和自动滚动；遵守 Reduce Motion。</p></td></tr><tr><td><p>可访问性</p></td><td><p>每个交互控件有 VoiceOver 标签；键盘可到达；最小可点击区域符合系统建议。</p></td></tr></table></div>
+<aside class="callout"><p><strong>Liquid Glass 使用边界  </strong>采用系统提供的 Glass / Material，而不在日志区大面积叠加透明背景。串口监视器的首要任务是读码清晰；“好看”不能牺牲对比度、选择文本或长时间查看的舒适度。</p></aside>
+<h2 id="sec-10"><strong>9. 技术架构与项目结构</strong></h2>
+<p>架构采用 MVVM + 单向数据流。SwiftUI View 只处理呈现与用户意图；ViewModel 调用应用服务；会话协调器串行协调连接、读写、定时任务与日志；SerialCore 是可替换的基础设施适配层。</p>
+<div class="table-wrap"><table><tr><th><p><strong>层</strong></p></th><th><p><strong>职责</strong></p></th><th><p><strong>禁止事项</strong></p></th></tr><tr><td><p>Presentation</p></td><td><p>SwiftUI View、Commands、AppKit bridge、可访问性。</p></td><td><p>不得直接打开串口、写文件或解析 HEX。</p></td></tr><tr><td><p>ViewModel</p></td><td><p>状态投影、用户意图校验、提示信息。</p></td><td><p>不得持有底层 file descriptor。</p></td></tr><tr><td><p>Application</p></td><td><p>SessionCoordinator、SendScheduler、LogService、PresetService。</p></td><td><p>不得依赖 SwiftUI / AppKit。</p></td></tr><tr><td><p>Domain</p></td><td><p>记录模型、配置、状态机、编码规则、错误模型。</p></td><td><p>不得依赖第三方串口库。</p></td></tr><tr><td><p>Infrastructure</p></td><td><p>SerialPortAdapter、端口发现、文件、UserDefaults。</p></td><td><p>不得修改 UI 状态。</p></td></tr></table></div>
+<h3 id="sec-10-1"><strong>9.1 推荐目录</strong></h3>
+<pre><code>SerialMonitor/<br>  App/                 SerialMonitorApp, Commands, AppDelegate bridge<br>  Features/Session/    SessionView, SessionViewModel, ConsoleView<br>  Features/Settings/   SettingsView, SettingsViewModel<br>  Domain/              Models, validation, state machine, protocols<br>  Application/         SessionCoordinator, scheduler, logging services<br>  Infrastructure/      SerialCore adapter, persistence, file system<br>  Shared/              formatting, localization, accessibility helpers<br>  Tests/               unit, integration, UI tests<br></code></pre>
+<h2 id="sec-11"><strong>10. 框架、系统能力与第三方依赖</strong></h2>
+<div class="table-wrap"><table><tr><th><p><strong>类别</strong></p></th><th><p><strong>选型</strong></p></th><th><p><strong>使用边界</strong></p></th></tr><tr><td><p>语言与构建</p></td><td><p>Swift 6、Xcode、Swift Package Manager。</p></td><td><p>全工程启用严格并发检查；依赖通过 SPM 锁定。</p></td></tr><tr><td><p>UI</p></td><td><p>SwiftUI。</p></td><td><p>窗口、设置、列表、工具栏、Commands、系统材质、状态管理。</p></td></tr><tr><td><p>补充 UI</p></td><td><p>AppKit。</p></td><td><p>NSOpenPanel/NSAlert、必要的 NSTextView bridge、菜单和窗口细节。</p></td></tr><tr><td><p>并发</p></td><td><p>Swift Concurrency：actor、async/await、AsyncStream。</p></td><td><p>串口 I/O、日志 I/O、定时调度；UI 更新回 MainActor。</p></td></tr><tr><td><p>串口库</p></td><td><p>SerialGate（首选 POC）或自研 POSIX/termios 适配器。</p></td><td><p>仅由 Infrastructure/SerialCore 引用；上线前锁定具体版本与许可证。</p></td></tr><tr><td><p>持久化</p></td><td><p>Foundation Codable、UserDefaults、FileManager。</p></td><td><p>不引入数据库；JSON 带 schemaVersion。</p></td></tr><tr><td><p>测试</p></td><td><p>XCTest、Swift Testing（可选）、XCUITest。</p></td><td><p>编码、状态机、文件轮转、虚拟串口适配器与主路径。</p></td></tr><tr><td><p>可选更新机制</p></td><td><p>Sparkle（后续版本）。</p></td><td><p>V1.0 不包含自动更新；如使用需单独完成签名与安全评审。</p></td></tr></table></div>
+<aside class="callout"><p><strong>依赖决策  </strong>推荐先以 SerialGate 完成一周 POC：验证 CH340、CP210x、FTDI、CDC-ACM 的发现、打开、读写、拔出和沙盒权限。若 POC 暴露功能或维护风险，则保留相同 SerialPorting 接口，将实现替换为项目内的 POSIX/termios + IOKit 适配器；上层不改。</p></aside>
+<h3 id="sec-11-1"><strong>10.1 代码签名与权限</strong></h3>
+<ul>
+<li>开启 App Sandbox 时配置 USB / serial 访问所需 entitlement；在目标机器和签名构建上验证，而非只在 Xcode Debug 验证。</li>
+<li>发布版本启用 Hardened Runtime、Developer ID 签名和 notarization；不把日志目录或用户数据写入应用包。</li>
+<li>应用不安装驱动、不请求管理员权限；CH340 等驱动识别问题属于系统驱动与硬件兼容性提示范畴。</li>
+</ul>
+<h2 id="sec-12"><strong>11. 关键接口与状态机</strong></h2>
+<h3 id="sec-12-1"><strong>11.1 核心协议</strong></h3>
+<pre><code>protocol SerialPorting: Sendable {<br>  func availablePorts() async -&gt; [SerialPortDescriptor]<br>  func open(configuration: SerialConfiguration) async throws<br>  func close() async<br>  func write(_ data: Data) async throws<br>  func incomingBytes() -&gt; AsyncThrowingStream&lt;Data, Error&gt;<br>  func connectionEvents() -&gt; AsyncStream&lt;SerialConnectionEvent&gt;<br>}<br><br>actor SessionCoordinator {<br>  // owns one active port, TX serialization, RX fan-out, log lifecycle, and scheduler cancellation<br>}<br></code></pre>
+<div class="table-wrap"><table><tr><th><p><strong>对象</strong></p></th><th><p><strong>关键字段 / 行为</strong></p></th></tr><tr><td><p>SerialConfiguration</p></td><td><p>path、baudRate、dataBits、parity、stopBits、flowControl；全部 Codable / Equatable。</p></td></tr><tr><td><p>CommunicationRecord</p></td><td><p>id、timestamp、direction、rawBytes、displayFormat、source、sendResult、presetSnapshot。</p></td></tr><tr><td><p>SessionState</p></td><td><p>disconnected / opening / connected / closing / error；携带端口与错误上下文。</p></td></tr><tr><td><p>SendSource</p></td><td><p>manual / autoSend / preset；供记录、筛选、日志追溯。</p></td></tr><tr><td><p>ValidationError</p></td><td><p>invalidHex、emptyPayload、invalidInterval、notConnected、invalidSetting。</p></td></tr></table></div>
+<h3 id="sec-12-2"><strong>11.2 连接状态转换</strong></h3>
+<div class="table-wrap"><table><tr><th><p><strong>当前状态</strong></p></th><th><p><strong>事件</strong></p></th><th><p><strong>下一状态</strong></p></th><th><p><strong>附加动作</strong></p></th></tr><tr><td><p>disconnected</p></td><td><p>用户打开且参数有效</p></td><td><p>opening</p></td><td><p>锁定连接参数，取消旧任务。</p></td></tr><tr><td><p>opening</p></td><td><p>底层打开成功</p></td><td><p>connected</p></td><td><p>启动 RX Stream；按需启动日志。</p></td></tr><tr><td><p>opening</p></td><td><p>打开失败</p></td><td><p>error</p></td><td><p>保存错误；恢复可编辑配置。</p></td></tr><tr><td><p>connected</p></td><td><p>用户关闭</p></td><td><p>closing</p></td><td><p>停止发送调度；flush 日志。</p></td></tr><tr><td><p>connected</p></td><td><p>设备移除 / 不可恢复 I/O</p></td><td><p>error</p></td><td><p>立刻取消发送；保留错误上下文。</p></td></tr><tr><td><p>closing</p></td><td><p>资源关闭完成</p></td><td><p>disconnected</p></td><td><p>更新 UI，允许新连接。</p></td></tr><tr><td><p>error</p></td><td><p>用户关闭 / 重试</p></td><td><p>closing / opening</p></td><td><p>仅显式操作可离开 error。</p></td></tr></table></div>
+<h2 id="sec-13"><strong>12. 数据处理、并发与性能要求</strong></h2>
+<h3 id="sec-13-1"><strong>12.1 数据管线</strong></h3>
+<pre><code>RX: Device → SerialPortAdapter → RX actor → RecordStore → [Console projection, LogWriter]<br>TX: Input / Preset → Validator + Encoder → TX queue actor → SerialPortAdapter → RecordStore + LogWriter<br></code></pre>
+<ul>
+<li>RX 读取、TX 写入、日志写入分别在非 MainActor 执行。所有 UI 可观察状态回到 MainActor 更新。</li>
+<li>SessionCoordinator 是唯一拥有自动发送任务和预设循环任务的 actor；启动新任务前必须取消并 await 旧任务结束。</li>
+<li>TX 按 FIFO 串行化。手动发送、自动发送和预设发送进入同一队列，禁止跨来源并发写串口。</li>
+<li>RecordStore 保存原始 Data；展示字符串按当前用户偏好惰性生成或缓存。切换 ASCII/HEX 只重建展示投影。</li>
+<li>默认缓存建议：最多 50,000 条记录或 16 MiB 原始数据，任一条件先达到则淘汰最早项。默认值必须可配置。</li>
+<li>在 115200 bps 持续数据输入场景下，主界面滚动和编辑操作不得因数据流失去响应；高流量可将 UI 刷新批处理到 16–50 ms。</li>
+</ul>
+<h3 id="sec-13-2"><strong>12.2 定时发送规则</strong></h3>
+<div class="table-wrap"><table><tr><th><p><strong>问题</strong></p></th><th><p><strong>处理规则</strong></p></th></tr><tr><td><p>最小间隔</p></td><td><p>UI 最小允许 10 ms；默认 1000 ms。过小值保存前校验并提示。</p></td></tr><tr><td><p>发送耗时超过间隔</p></td><td><p>不堆积；下一次发送在本次完成后，按单调时钟重新计算。</p></td></tr><tr><td><p>模式切换</p></td><td><p>切换 ASCII / HEX、行结束符、端口参数时，运行中的普通自动发送先停止。</p></td></tr><tr><td><p>预设修改</p></td><td><p>预设循环运行时使用一次循环开始时的快照；下一轮读取最新已保存顺序。</p></td></tr><tr><td><p>断开 / 错误</p></td><td><p>立即取消 Task；状态栏显示停止原因。</p></td></tr></table></div>
+<h2 id="sec-14"><strong>13. 错误处理、恢复与退出行为</strong></h2>
+<div class="table-wrap"><table><tr><th><p><strong>类别</strong></p></th><th><p><strong>用户反馈</strong></p></th><th><p><strong>系统行为</strong></p></th></tr><tr><td><p>端口不存在 / 被占用</p></td><td><p>显示端口名和可读原因，提供刷新与重试。</p></td><td><p>不进入 connected；保留当前配置。</p></td></tr><tr><td><p>设备拔出</p></td><td><p>显示“设备已断开”。</p></td><td><p>停止所有发送、结束日志、进入 error。</p></td></tr><tr><td><p>HEX 格式错误</p></td><td><p>标记输入位置或错误类型。</p></td><td><p>阻止发送，不修改输入。</p></td></tr><tr><td><p>日志写入失败</p></td><td><p>显示路径、文件错误和停止记录说明。</p></td><td><p>停止日志，不停止串口会话。</p></td></tr><tr><td><p>配置文件损坏</p></td><td><p>一次性提示并说明已回退默认值。</p></td><td><p>备份损坏文件，加载安全默认值。</p></td></tr><tr><td><p>应用退出</p></td><td><p>提示运行中的日志或未保存编辑。</p></td><td><p>选择停止并退出 / 取消退出；flush 完成后退出。</p></td></tr></table></div>
+<p>错误信息不得只显示底层系统码。用户界面必须提供“发生了什么、影响是什么、可以怎么做”的短说明；详细错误可在可复制的展开区域展示。</p>
+<h2 id="sec-15"><strong>14. 安全、隐私与本地化</strong></h2>
+<ul>
+<li>不上传串口数据、预设或日志；所有数据默认仅保存在用户本机。</li>
+<li>日志、预设和错误详情可能含敏感命令或设备标识；界面避免自动复制、自动分享或发送到外部服务。</li>
+<li>对文件名、端口名和预设名称做路径安全清洗；不得允许通过名称构造越界路径。</li>
+<li>首发提供简体中文；所有用户可见字符串使用 String Catalog 管理，为英文和其他语言预留。</li>
+<li>使用 Unicode 和 UTF-8；预设名称、日志路径、错误信息必须支持中文。</li>
+</ul>
+<h2 id="sec-16"><strong>15. 可测试性设计</strong></h2>
+<div class="table-wrap"><table><tr><th><p><strong>层级</strong></p></th><th><p><strong>测试内容</strong></p></th><th><p><strong>方法</strong></p></th></tr><tr><td><p>单元测试</p></td><td><p>HEX 编解码、ASCII 编码、行结束符、缓存截断、设置校验、命名规则。</p></td><td><p>纯 Swift 测试，不依赖硬件。</p></td></tr><tr><td><p>状态机测试</p></td><td><p>连接状态转换、错误恢复、自动发送互斥、退出流程。</p></td><td><p>事件序列测试 + 虚拟时钟。</p></td></tr><tr><td><p>集成测试</p></td><td><p>串口读写、设备断开、日志轮转、持久化恢复。</p></td><td><p>Pseudo-terminal 或 mock SerialPorting。</p></td></tr><tr><td><p>UI 测试</p></td><td><p>连接禁用态、错误提示、快捷键、设置即时生效。</p></td><td><p>XCUITest。</p></td></tr><tr><td><p>实机兼容</p></td><td><p>CH340、CP210x、FTDI、CDC-ACM；不同波特率与拔插。</p></td><td><p>发布前人工测试矩阵。</p></td></tr></table></div>
+<h2 id="sec-17"><strong>16. 验收标准</strong></h2>
+<div class="table-wrap"><table><tr><th><p><strong>编号</strong></p></th><th><p><strong>验收项</strong></p></th><th><p><strong>通过条件</strong></p></th></tr><tr><td><p>AC-01</p></td><td><p>端口发现</p></td><td><p>插入 / 拔出常见 USB-UART 后，刷新可正确更新列表；异常端口不导致崩溃。</p></td></tr><tr><td><p>AC-02</p></td><td><p>连接</p></td><td><p>正确参数可连接；被占用或不存在端口有清晰错误；状态机无非法跳转。</p></td></tr><tr><td><p>AC-03</p></td><td><p>接收</p></td><td><p>连续 RX 可在 ASCII / HEX 下显示；暂停时仍记录并可恢复展示。</p></td></tr><tr><td><p>AC-04</p></td><td><p>发送</p></td><td><p>ASCII、HEX、CRLF 可正确发送；非法 HEX 与未连接状态均被阻止。</p></td></tr><tr><td><p>AC-05</p></td><td><p>自动发送</p></td><td><p>正数间隔可稳定启动 / 停止；串口关闭或错误后立即停止。</p></td></tr><tr><td><p>AC-06</p></td><td><p>预设</p></td><td><p>增删改排、启用、单发、循环与重启恢复正确；日志可区分预设来源。</p></td></tr><tr><td><p>AC-07</p></td><td><p>日志</p></td><td><p>开始 / 停止、文件名、内容字段、轮转与写入失败处理符合定义。</p></td></tr><tr><td><p>AC-08</p></td><td><p>设置</p></td><td><p>有效值持久化；无效值不保存；即时设置不丢当前数据。</p></td></tr><tr><td><p>AC-09</p></td><td><p>原生体验</p></td><td><p>菜单、快捷键、深浅色、VoiceOver 基本操作可用；窗口布局不溢出。</p></td></tr><tr><td><p>AC-10</p></td><td><p>稳定性</p></td><td><p>115200 bps 持续 30 分钟收发后应用可操作、无未处理崩溃、缓存策略正确。</p></td></tr></table></div>
+<h2 id="sec-18"><strong>17. 开发阶段与交付物</strong></h2>
+<div class="table-wrap"><table><tr><th><p><strong>阶段</strong></p></th><th><p><strong>目标</strong></p></th><th><p><strong>主要交付</strong></p></th></tr><tr><td><p>P0：技术验证</p></td><td><p>验证串口库、权限、CH340 / CP210x / FTDI、伪终端测试。</p></td><td><p>POC、依赖锁定决定、风险清单。</p></td></tr><tr><td><p>P1：核心会话</p></td><td><p>完成连接、RX/TX、编码、状态机、内存记录。</p></td><td><p>可运行开发版与单元测试。</p></td></tr><tr><td><p>P2：效率功能</p></td><td><p>完成自动发送、预设、日志、设置、菜单快捷键。</p></td><td><p>功能完整 Beta。</p></td></tr><tr><td><p>P3：体验与可靠性</p></td><td><p>性能、异常恢复、可访问性、签名和安装验证。</p></td><td><p>RC、测试报告、发布包。</p></td></tr></table></div>
+<h2 id="sec-19"><strong>18. 风险与待确认项</strong></h2>
+<div class="table-wrap"><table><tr><th><p><strong>事项</strong></p></th><th><p><strong>风险 / 影响</strong></p></th><th><p><strong>建议决策</strong></p></th></tr><tr><td><p>最低系统版本</p></td><td><p>Liquid Glass API 与兼容版本之间需平衡。</p></td><td><p>以 macOS 14 为运行基线；在 macOS 26 启用增强视觉，低版本优雅降级。</p></td></tr><tr><td><p>串口库</p></td><td><p>第三方维护活跃度、权限与边缘参数支持存在差异。</p></td><td><p>P0 做实机兼容验证；保留 SerialPorting 适配器替换能力。</p></td></tr><tr><td><p>日志格式</p></td><td><p>用户可读性与机器可解析性可能冲突。</p></td><td><p>采用 JSONL 原始落盘；未来可加“导出可读文本”而不改变底层日志。</p></td></tr><tr><td><p>多会话</p></td><td><p>后续若支持多个串口，记录、任务和日志要会话隔离。</p></td><td><p>V1.0 按 sessionId 建模，UI 只暴露一个活动会话。</p></td></tr><tr><td><p>自动发送最小间隔</p></td><td><p>过低间隔可能与设备缓冲、USB 转串口驱动冲突。</p></td><td><p>默认 1000 ms，最小 10 ms；说明不保证设备端处理能力。</p></td></tr></table></div>
+<h2 id="sec-20"><strong>19. 参考资料与实施说明</strong></h2>
+<ul>
+<li>Apple SwiftUI / AppKit：用于原生 macOS UI、菜单、窗口与系统视觉能力。</li>
+<li>Apple IOKit：用于硬件设备与串口发现相关能力；实际通信可经串口库或 POSIX 适配层封装。</li>
+<li>SerialGate：Swift 6、macOS 13+ 的串口通信候选库；仅作为 Infrastructure 依赖候选，必须经过 P0 验证。</li>
+<li>所有第三方依赖应记录版本、许可证、哈希与升级策略；发布前完成许可证清单。</li>
+</ul>
+<h2 id="sec-21"><strong>20. 实施结论</strong></h2>
+<aside class="callout"><p><strong>推荐基线  </strong>以 SwiftUI + AppKit 建立原生体验；以 Swift Concurrency actor 管理串口会话与定时发送；以可替换 SerialCore 隔离串口库；以原始字节记录 + JSONL 日志确保可追溯。这一组合适合先做“基础但精致”的 macOS 串口调试助手，也保留未来支持更多平台的技术空间。</p></aside></main>
+    </div>
+  </div>
+  <script>
+    const toc = document.getElementById('toc');
+    document.querySelectorAll('main h2, main h3').forEach(h => {
+      const a = document.createElement('a'); a.href = '#' + h.id; a.textContent = h.textContent;
+      a.style.paddingLeft = h.tagName === 'H3' ? '18px' : '7px'; toc.appendChild(a);
+    });
+  </script>
+</body>
+</html>

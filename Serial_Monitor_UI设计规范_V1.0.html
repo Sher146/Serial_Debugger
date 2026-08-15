@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Serial Monitor — UI 设计规范 V1.0</title>
+  <style>
+    :root {
+      --bg:#f5f5f7; --panel:rgba(255,255,255,.84); --panel-solid:#fff; --text:#1d1d1f;
+      --muted:#6e6e73; --line:rgba(60,60,67,.18); --blue:#0071e3; --blue-weak:#eef6ff;
+      --green:#16803c; --orange:#b54708; --red:#d92d20; --code:#f2f4f7; --shadow:0 18px 45px rgba(0,0,0,.08);
+    }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#111113; --panel:rgba(30,30,32,.88); --panel-solid:#1e1e20; --text:#f5f5f7; --muted:#a1a1a6; --line:rgba(235,235,245,.18); --blue:#2997ff; --blue-weak:#142b43; --green:#45d17a; --orange:#ffb340; --red:#ff6961; --code:#1d1d20; --shadow:0 18px 45px rgba(0,0,0,.30); }
+    }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; color:var(--text); background:var(--bg); font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Helvetica Neue",Arial,sans-serif; line-height:1.65; -webkit-font-smoothing:antialiased; }
+    .shell { max-width:1360px; margin:auto; padding:28px 28px 72px; }
+    .topbar { display:flex; align-items:center; justify-content:space-between; gap:16px; color:var(--muted); font-size:14px; margin-bottom:22px; }
+    .brand { color:var(--text); font-weight:720; letter-spacing:-.02em; }
+    button { border:1px solid var(--line); border-radius:999px; padding:7px 12px; color:var(--text); background:var(--panel); font:inherit; cursor:pointer; }
+    .layout { display:grid; grid-template-columns:254px minmax(0,1fr); gap:28px; align-items:start; }
+    nav { position:sticky; top:24px; padding:16px; border:1px solid var(--line); border-radius:18px; background:var(--panel); box-shadow:0 8px 24px rgba(0,0,0,.04); backdrop-filter:blur(20px); }
+    nav h2 { margin:0 0 9px; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+    nav a { display:block; padding:5px 7px; color:var(--muted); text-decoration:none; border-radius:7px; font-size:13px; line-height:1.35; }
+    nav a:hover { background:var(--blue-weak); color:var(--blue); }
+    main { min-width:0; padding:clamp(26px,4vw,64px); border:1px solid var(--line); border-radius:24px; background:var(--panel); box-shadow:var(--shadow); backdrop-filter:blur(20px); }
+    h1 { margin:0; font-size:clamp(38px,6vw,64px); letter-spacing:-.055em; line-height:1.08; }
+    .subtitle { margin:12px 0 28px; color:var(--blue); font-size:clamp(18px,2.3vw,25px); letter-spacing:-.02em; }
+    h2 { margin:58px 0 15px; padding-top:8px; font-size:clamp(28px,3.5vw,38px); line-height:1.18; letter-spacing:-.04em; scroll-margin-top:28px; }
+    h3 { margin:30px 0 9px; color:var(--blue); font-size:clamp(20px,2.3vw,25px); line-height:1.3; letter-spacing:-.02em; scroll-margin-top:28px; }
+    h4 { margin:20px 0 7px; font-size:17px; }
+    p { margin:0 0 14px; } ul,ol { margin:8px 0 20px; padding-left:1.35em; } li { margin:6px 0; padding-left:.18em; } li::marker { color:var(--blue); }
+    .callout { margin:18px 0 24px; padding:16px 18px; border:1px solid color-mix(in srgb,var(--blue) 16%,var(--line)); border-radius:14px; background:var(--blue-weak); }
+    .callout strong { color:var(--blue); }
+    .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin:16px 0 24px; }
+    .card { padding:17px; border:1px solid var(--line); border-radius:14px; background:color-mix(in srgb,var(--panel-solid) 75%,transparent); }
+    .card h4 { margin:0 0 5px; } .card p:last-child { margin:0; color:var(--muted); font-size:14px; }
+    .table-wrap { margin:17px 0 28px; overflow:auto; border:1px solid var(--line); border-radius:13px; }
+    table { width:100%; min-width:650px; border-collapse:collapse; font-size:14px; } th { background:color-mix(in srgb,var(--blue) 8%,var(--panel-solid)); text-align:left; font-weight:700; } th,td { padding:11px 13px; border-right:1px solid var(--line); border-bottom:1px solid var(--line); vertical-align:top; } th:last-child,td:last-child { border-right:0; } tr:last-child td { border-bottom:0; }
+    .status { display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:650; white-space:nowrap; } .dot { width:8px;height:8px;border-radius:50%;background:currentColor; } .green{color:var(--green)} .orange{color:var(--orange)} .red{color:var(--red)} .gray{color:var(--muted)}
+    .tokens { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:16px 0 24px; } .token { padding:13px; border:1px solid var(--line); border-radius:12px; } .swatch { height:36px; margin-bottom:9px; border-radius:8px; border:1px solid var(--line); } .token b { display:block; font-size:13px; } .token small { color:var(--muted); }
+    .wireframe { margin:18px 0 24px; padding:12px; border:1px solid var(--line); border-radius:17px; background:var(--code); font-size:13px; } .wf-top { display:flex; gap:8px; flex-wrap:wrap; padding:10px; border-radius:10px; background:var(--panel-solid); border:1px solid var(--line); } .wf-chip { padding:5px 8px; border:1px solid var(--line); border-radius:7px; background:var(--bg); } .wf-main { display:grid; grid-template-columns:minmax(0,1fr) 240px; gap:10px; margin-top:10px; } .wf-console { min-height:190px; padding:15px; border-radius:10px; color:var(--muted); background:var(--panel-solid); border:1px solid var(--line); font-family:ui-monospace,SFMono-Regular,Menlo,monospace; } .wf-side { padding:12px; border-radius:10px; background:var(--panel-solid); border:1px solid var(--line); } .wf-send { margin-top:10px; min-height:80px; padding:12px; border-radius:10px; background:var(--panel-solid); border:1px solid var(--line); }
+    .menu { margin:15px 0 25px; border:1px solid var(--line); border-radius:14px; overflow:hidden; } .menu-row { display:grid; grid-template-columns:170px minmax(0,1fr) 185px; gap:16px; padding:13px 16px; border-bottom:1px solid var(--line); } .menu-row:last-child { border-bottom:0; } .menu-name { font-weight:700; } .menu-items { color:var(--muted); } .shortcut { color:var(--blue); font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13px; }
+    .tree { padding:16px 18px; margin:16px 0 24px; border-radius:14px; background:var(--code); border:1px solid var(--line); font-family:ui-monospace,SFMono-Regular,Menlo,monospace; white-space:pre-wrap; font-size:13px; line-height:1.75; }
+    .rule { color:var(--muted); font-size:14px; } .key { padding:2px 6px; border:1px solid var(--line); border-bottom-width:2px; border-radius:5px; background:var(--panel-solid); font:12px ui-monospace,SFMono-Regular,Menlo,monospace; }
+    @media (max-width:920px) { .shell{padding:18px 14px 48px}.layout{grid-template-columns:1fr}nav{position:relative;top:auto;max-height:260px;overflow:auto}main{padding:26px 18px;border-radius:18px}.grid{grid-template-columns:1fr}.tokens{grid-template-columns:repeat(2,minmax(0,1fr))}.wf-main{grid-template-columns:1fr}.menu-row{grid-template-columns:1fr;gap:5px} }
+    @media print { body{background:#fff}.topbar,nav{display:none}.shell{max-width:none;padding:0}.layout{display:block}main{padding:0;border:0;box-shadow:none}.card,.table-wrap,.wireframe,.menu{break-inside:avoid} }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar"><div><span class="brand">Serial Monitor</span><span> · UI 设计规范 V1.0</span></div><button onclick="window.print()">打印 / 导出 PDF</button></header>
+    <div class="layout">
+      <nav aria-label="文档目录">
+        <h2>目录</h2>
+        <a href="#principles">1. 设计目标与原则</a><a href="#style">2. 视觉风格与设计令牌</a><a href="#window">3. 主窗口结构</a><a href="#pages">4. 页面与弹窗</a><a href="#components">5. 组件与状态</a><a href="#menu">6. macOS 菜单结构</a><a href="#shortcuts">7. 快捷键规范</a><a href="#interaction">8. 交互规则</a><a href="#accessibility">9. 可访问性与适配</a><a href="#swiftui">10. SwiftUI 实施映射</a>
+      </nav>
+      <main>
+        <h1>Serial Monitor</h1>
+        <p class="subtitle">macOS 原生串口调试助手 · UI 设计规范</p>
+        <div class="callout"><strong>定位</strong> 这是独立于功能需求文档的界面设计基线。它定义产品应该“长什么样、如何组织、状态如何表达、菜单怎样工作”，用于 SwiftUI 页面开发和验收。</div>
+
+        <h2 id="principles">1. 设计目标与原则</h2>
+        <div class="grid">
+          <div class="card"><h4>原生而克制</h4><p>优先系统控件、窗口习惯与 macOS 菜单，不做网页后台式大色块或复杂装饰。</p></div>
+          <div class="card"><h4>信息密度可控</h4><p>接收区为主视觉，配置与预设可收起；高频信息一眼能定位，低频项不干扰调试。</p></div>
+          <div class="card"><h4>状态优先</h4><p>连接、日志、自动发送、错误都用文字、图标和颜色三重表达，不能只靠颜色。</p></div>
+          <div class="card"><h4>读码第一</h4><p>玻璃材质只作为层级与容器，不侵入长日志阅读区域；控制台始终保持清晰对比度。</p></div>
+        </div>
+        <ul><li>采用“专业工具 + Apple 原生”气质，参考 Console、Xcode 检查器与系统设置的阅读节奏。</li><li>默认浅色、跟随系统外观；用户可在设置中指定浅色、深色或跟随系统。</li><li>默认窗口最小尺寸为 980 × 680 pt；窗口变窄时先收起检查器，再压缩次要文本，最后才允许横向表格滚动。</li><li>Liquid Glass / Material 仅用于工具栏、浮层、侧栏和短操作块；数据控制台使用实色或高不透明材质。</li></ul>
+
+        <h2 id="style">2. 视觉风格与设计令牌</h2>
+        <h3>2.1 颜色与状态</h3>
+        <div class="tokens">
+          <div class="token"><div class="swatch" style="background:#0071e3"></div><b>Accent Blue</b><small>主要操作、链接、选中态</small></div>
+          <div class="token"><div class="swatch" style="background:#16803c"></div><b>Connected Green</b><small>已连接、日志运行</small></div>
+          <div class="token"><div class="swatch" style="background:#b54708"></div><b>Attention Orange</b><small>连接中、暂停、待处理</small></div>
+          <div class="token"><div class="swatch" style="background:#d92d20"></div><b>Error Red</b><small>连接错误、发送失败、危险操作</small></div>
+        </div>
+        <table><thead><tr><th>令牌</th><th>建议值</th><th>使用规则</th></tr></thead><tbody>
+          <tr><td>窗口背景</td><td>系统 window background / grouped background</td><td>随深浅色变化；不使用纯白大面积背景。</td></tr>
+          <tr><td>分层材质</td><td>regularMaterial / thickMaterial</td><td>工具栏、侧栏、弹出菜单、检查器；日志区不透明度不低于 90%。</td></tr>
+          <tr><td>圆角</td><td>8 / 12 / 16 pt</td><td>小控件 8、卡片 12、浮层 16；避免同页面多种不规则圆角。</td></tr>
+          <tr><td>边框</td><td>separator / 18% 透明度</td><td>容器边界、表格、输入框；不用明显投影模拟立体按钮。</td></tr>
+          <tr><td>间距栅格</td><td>4 pt 基数</td><td>常用 8、12、16、20、24、32；同层元素保持一致。</td></tr>
+        </tbody></table>
+        <h3>2.2 字体与数据呈现</h3>
+        <table><thead><tr><th>用途</th><th>字体与字号</th><th>要求</th></tr></thead><tbody>
+          <tr><td>应用 UI</td><td>SF Pro / 苹方，13–15 pt</td><td>沿用系统动态字号；中文以系统苹方回退。</td></tr>
+          <tr><td>控制台记录</td><td>SF Mono / Menlo，默认 12 pt</td><td>RX/TX、HEX、时间戳均等宽；用户可在设置中调整 10–18 pt。</td></tr>
+          <tr><td>区块标题</td><td>系统 semibold，13–15 pt</td><td>避免全部大写；中英文混排保持自然字距。</td></tr>
+          <tr><td>状态和提示</td><td>系统 medium，12–13 pt</td><td>短、具体、可行动，例如“端口已被占用 · 重新选择或刷新”。</td></tr>
+        </tbody></table>
+
+        <h2 id="window">3. 主窗口结构</h2>
+        <p>V1.0 使用单窗口、单活跃会话。窗口由“连接工具栏 + 工作区 + 状态栏”组成；接收控制台占据最大空间，预设为可收起检查器。</p>
+        <div class="wireframe" aria-label="主窗口线框图">
+          <div class="wf-top"><span class="wf-chip">Port /dev/cu.usbserial</span><span class="wf-chip">115200 · 8N1</span><span class="wf-chip">↻ 刷新</span><span class="wf-chip">● 已连接</span><span class="wf-chip">断开</span><span class="wf-chip" style="margin-left:auto">日志：未记录</span></div>
+          <div class="wf-main"><div><div class="wf-console">12:04:21.326  RX  55 AA 01 00<br>12:04:22.041  TX  AT+RST\r\n<br>12:04:22.512  RX  ready<br><br>接收控制台（主工作区）</div><div class="wf-send">ASCII / HEX　　输入发送数据…　　　　　　　　　发送 ⌘↩<br><small>行结束符：CRLF　｜　自动发送：未运行</small></div></div><aside class="wf-side"><b>预设</b><hr>✓ 查询状态<br>✓ 重启设备<br>○ 读取版本<hr>循环间隔 1000 ms<br><br>开始循环</aside></div>
+        </div>
+        <table><thead><tr><th>区域</th><th>层级与内容</th><th>行为</th></tr></thead><tbody>
+          <tr><td>连接工具栏</td><td>端口选择、刷新、通信参数摘要、高级参数、连接状态、打开/关闭。</td><td>始终可见。连接中锁定参数；已连接时主按钮变为“关闭”。</td></tr>
+          <tr><td>接收控制台</td><td>暂停、清空、ASCII/HEX 查看、时间戳、自动滚动、记录列表。</td><td>可独立滚动；用户向上滚动后停止自动跟随，并显示“返回最新数据”。</td></tr>
+          <tr><td>发送编辑器</td><td>模式切换、行结束符、文本输入、校验提示、发送按钮。</td><td>位于窗口下部且固定可见；<span class="key">⌘</span> + <span class="key">↩</span> 发送。</td></tr>
+          <tr><td>预设检查器</td><td>预设列表、启用、排序、单发、编辑、删除、循环控制。</td><td>默认展开；窗口不足时可由工具栏按钮隐藏/显示。</td></tr>
+          <tr><td>状态栏</td><td>端口参数、RX/TX 计数、缓存占用、日志状态、最近错误。</td><td>只展示摘要；点击日志或错误可打开详情。</td></tr>
+        </tbody></table>
+
+        <h2 id="pages">4. 页面与弹窗</h2>
+        <table><thead><tr><th>页面 / 表面</th><th>入口</th><th>信息结构与关键动作</th></tr></thead><tbody>
+          <tr><td>主工作区</td><td>应用启动后默认显示</td><td>串口连接、记录浏览、发送、自动发送、预设、日志状态。</td></tr>
+          <tr><td>连接高级参数 Popover</td><td>工具栏“参数”或齿轮</td><td>数据位、校验位、停止位、流控制；保存为当前会话配置。</td></tr>
+          <tr><td>设置窗口</td><td>Serial Monitor ▸ 设置…</td><td>侧边栏：常规、显示、数据格式、数据保留、日志、会话与预设。</td></tr>
+          <tr><td>预设编辑 Sheet</td><td>新建或编辑预设</td><td>名称、内容、ASCII/HEX、启用、备注。底部：取消 / 保存；实时校验 HEX。</td></tr>
+          <tr><td>日志详情 Popover</td><td>状态栏日志项</td><td>当前文件路径、大小、开始时间、轮转阈值、停止记录、在访达中显示。</td></tr>
+          <tr><td>错误提示 Alert</td><td>打开失败、断开、写入失败</td><td>短错误、可展开详情、刷新/重试/关闭；不使用只含“确定”的无操作提示。</td></tr>
+          <tr><td>关于 / 帮助</td><td>应用菜单</td><td>版本、构建号、快捷键表、串口识别与驱动排查入口。</td></tr>
+        </tbody></table>
+
+        <h2 id="components">5. 组件与状态</h2>
+        <h3>5.1 状态表达</h3>
+        <table><thead><tr><th>状态</th><th>视觉</th><th>主按钮</th><th>用户可操作项</th></tr></thead><tbody>
+          <tr><td><span class="status gray"><i class="dot"></i>未连接</span></td><td>中性灰状态徽标</td><td>打开串口</td><td>可编辑所有参数、发送区禁用、预设单发禁用。</td></tr>
+          <tr><td><span class="status orange"><i class="dot"></i>连接中</span></td><td>橙色进度指示 + “正在打开…”</td><td>取消</td><td>锁定端口与参数；保留刷新但不触发连接切换。</td></tr>
+          <tr><td><span class="status green"><i class="dot"></i>已连接</span></td><td>绿色徽标 + 当前端口</td><td>关闭串口</td><td>启用发送、自动发送、日志和预设循环。</td></tr>
+          <tr><td><span class="status orange"><i class="dot"></i>暂停显示</span></td><td>控制台顶端橙色细条</td><td>恢复显示</td><td>串口、日志与后台收包继续运行；仅暂停渲染自动滚动。</td></tr>
+          <tr><td><span class="status red"><i class="dot"></i>连接错误</span></td><td>红色徽标 + 可复制错误摘要</td><td>重新连接</td><td>停止所有自动发送；允许修改参数、刷新端口和查看详细错误。</td></tr>
+        </tbody></table>
+        <h3>5.2 核心组件规则</h3>
+        <div class="grid"><div class="card"><h4>端口选择器</h4><p>显示友好名优先、完整路径次级显示；缺失端口保留为灰色“上次使用的端口不可用”。</p></div><div class="card"><h4>主操作按钮</h4><p>每个区域最多一个蓝色强调按钮。危险操作不用蓝色，使用确认弹窗或红色文字按钮。</p></div><div class="card"><h4>记录行</h4><p>方向用 RX/TX 标签 + 语义色；不为每行添加强背景。鼠标悬停只显示轻微底色和复制图标。</p></div><div class="card"><h4>输入校验</h4><p>HEX 错误在输入框下方就近说明，指出奇数字符或非法字节；不弹出打断式警告。</p></div></div>
+
+        <h2 id="menu">6. macOS 菜单结构</h2>
+        <div class="callout"><strong>菜单原则</strong> 菜单是主工作区的同等入口，不是功能副本。所有菜单项都应与当前连接、发送、日志状态同步禁用或切换名称。</div>
+        <div class="tree">Serial Monitor
+├─ 关于 Serial Monitor
+├─ 设置…
+├─ 服务
+├─ 隐藏 / 隐藏其他 / 显示全部
+└─ 退出 Serial Monitor
+
+文件
+├─ 新建会话
+├─ 打开串口… / 关闭串口
+├─ 开始日志记录… / 停止日志记录
+├─ 在访达中显示当前日志
+└─ 关闭窗口
+
+编辑
+├─ 撤销 / 重做
+├─ 剪切 / 拷贝 / 粘贴 / 全选
+├─ 清空接收记录
+└─ 拷贝选中记录（格式化）
+
+串口
+├─ 刷新串口列表
+├─ 通信参数 ▸ 波特率 / 数据位 / 校验 / 停止位 / 流控制
+├─ 发送当前数据
+├─ 开始自动发送 / 停止自动发送
+└─ 清除最近错误
+
+预设
+├─ 新建预设…
+├─ 管理预设…
+├─ 发送已选预设
+└─ 开始预设循环 / 停止预设循环
+
+视图
+├─ 显示 / 隐藏预设检查器
+├─ 自动滚动
+├─ 显示时间戳
+├─ 接收显示格式 ▸ ASCII / HEX
+└─ 字号 ▸ 减小 / 默认 / 增大
+
+窗口
+├─ 最小化 / 缩放 / 移到…
+└─ 显示主窗口
+
+帮助
+├─ Serial Monitor 帮助
+├─ 快捷键参考
+└─ 串口无法识别？</div>
+        <div class="menu">
+          <div class="menu-row"><div class="menu-name">文件</div><div class="menu-items">新建会话；打开/关闭串口；开始/停止日志；显示当前日志；关闭窗口</div><div class="shortcut">⌘N · ⌘O · ⌘W · ⌘L</div></div>
+          <div class="menu-row"><div class="menu-name">串口</div><div class="menu-items">刷新列表；通信参数；发送当前数据；启动/停止自动发送；清除最近错误</div><div class="shortcut">⌘R · ⌘↩ · ⇧⌘↩</div></div>
+          <div class="menu-row"><div class="menu-name">预设</div><div class="menu-items">新建、管理、发送已选预设、启动/停止预设循环</div><div class="shortcut">⌥⌘N · ⌥⌘↩</div></div>
+          <div class="menu-row"><div class="menu-name">视图</div><div class="menu-items">预设检查器、自动滚动、时间戳、接收显示格式、字号</div><div class="shortcut">⌥⌘P · ⌘+ / ⌘−</div></div>
+        </div>
+
+        <h2 id="shortcuts">7. 快捷键规范</h2>
+        <table><thead><tr><th>动作</th><th>快捷键</th><th>条件与冲突处理</th></tr></thead><tbody>
+          <tr><td>新建会话</td><td><span class="key">⌘</span><span class="key">N</span></td><td>始终可用；V1.0 重置当前会话工作区，若有运行日志或未保存编辑则提示。</td></tr>
+          <tr><td>打开 / 关闭串口</td><td><span class="key">⌘</span><span class="key">O</span> / <span class="key">⌘</span><span class="key">W</span></td><td>根据状态只启用其一；不得覆盖系统关闭窗口的标准预期，必要时关闭窗口使用 <span class="key">⌘</span><span class="key">⇧</span><span class="key">W</span>。</td></tr>
+          <tr><td>发送当前数据</td><td><span class="key">⌘</span><span class="key">↩</span></td><td>已连接、输入合法、TX 队列未被独占时可用；普通 Return 保留给多行换行。</td></tr>
+          <tr><td>自动发送</td><td><span class="key">⌘</span><span class="key">⇧</span><span class="key">↩</span></td><td>自动发送与预设循环互斥；启动前静默停止另一模式并在状态栏说明。</td></tr>
+          <tr><td>开始 / 停止日志</td><td><span class="key">⌘</span><span class="key">L</span></td><td>仅已连接时开始可用；停止记录始终可用。</td></tr>
+          <tr><td>清空接收记录</td><td><span class="key">⌘</span><span class="key">K</span></td><td>仅清内存视图；不影响日志，初次操作显示轻提示。</td></tr>
+          <tr><td>设置</td><td><span class="key">⌘</span><span class="key">,</span></td><td>使用 macOS 标准快捷键。</td></tr>
+        </tbody></table>
+
+        <h2 id="interaction">8. 交互规则</h2>
+        <ol><li><strong>自动滚动：</strong>新记录到来时仅在用户停留在底部附近才自动跟随；手动上滚后显示悬浮“回到最新数据”按钮，不强制抢占阅读位置。</li><li><strong>暂停显示：</strong>暂停按钮切换为“恢复显示”，同时在控制台顶部出现常驻状态条；后台仍完成记录、缓存和日志写入。</li><li><strong>模式切换：</strong>接收 ASCII/HEX 仅改变渲染；发送模式改变当前输入的解释方式。切换为 HEX 时立即校验，不清空用户文本。</li><li><strong>保存：</strong>设置采用即时保存；预设编辑 Sheet 采用显式“保存”。关闭时只有未保存预设编辑、日志仍在记录或正在连接才要求确认。</li><li><strong>危险操作：</strong>删除预设、恢复默认设置采用确认对话框；清空接收记录允许撤销提示但不二次确认，避免高频操作负担。</li><li><strong>反馈优先级：</strong>输入框内校验 → 局部提示 → 状态栏 → Alert。只有会中断会话、造成数据丢失或需要用户选择的情况才弹 Alert。</li></ol>
+
+        <h2 id="accessibility">9. 可访问性与窗口适配</h2>
+        <table><thead><tr><th>主题</th><th>要求</th></tr></thead><tbody>
+          <tr><td>VoiceOver</td><td>状态徽标朗读“串口状态：已连接，/dev/cu.usbserial，115200 波特率”；图标按钮必须有明确 accessibilityLabel。</td></tr>
+          <tr><td>键盘操作</td><td>工具栏、控制台操作、发送区、预设列表、设置表单可按逻辑顺序 Tab 聚焦；预设排序提供键盘替代操作。</td></tr>
+          <tr><td>颜色对比</td><td>正文与背景达到可读对比；RX/TX/错误除颜色外必须有文字标签、图标或方向列。</td></tr>
+          <tr><td>减少动态效果</td><td>检测 Reduce Motion 后取消连续呼吸、材质变形与非必要滚动动画，保留瞬时状态变化。</td></tr>
+          <tr><td>窄窗口</td><td>优先隐藏预设检查器，控制台和发送区保留；工具栏参数压缩为摘要 + Popover，不让控件断行堆叠。</td></tr>
+        </tbody></table>
+
+        <h2 id="swiftui">10. SwiftUI 实施映射</h2>
+        <table><thead><tr><th>设计面</th><th>SwiftUI 结构</th><th>少量 AppKit 补充</th></tr></thead><tbody>
+          <tr><td>应用与菜单</td><td>App、WindowGroup、Commands、Settings</td><td>必要的菜单验证与窗口控制。</td></tr>
+          <tr><td>主工作区</td><td>NavigationSplitView 或 HSplitView；Toolbar；Inspector</td><td>NSSplitView 细节仅在 SwiftUI 无法满足时桥接。</td></tr>
+          <tr><td>控制台</td><td>ScrollView + LazyVStack，或高性能文本视图封装</td><td>大量长文本、选择复制、虚拟化可采用 NSTextView 的 NSViewRepresentable。</td></tr>
+          <tr><td>配置与编辑</td><td>Form、Picker、TextField、TextEditor、Sheet、Popover</td><td>NSAlert 用于系统风格的破坏性确认和错误处理。</td></tr>
+          <tr><td>视觉材质</td><td>Material、controlSize、tint、symbolRenderingMode</td><td>系统版本可用时采用 Glass API；低版本回退 Material。</td></tr>
+        </tbody></table>
+        <div class="callout"><strong>最终验收重点</strong> 任何一个界面状态下，用户都应该能在 1 秒内知道：当前是否已连接、正在看什么格式、自动发送是否运行、日志是否记录，以及下一步能点击什么。若需要阅读大量说明才能判断状态，UI 即不合格。</div>
+      </main>
+    </div>
+  </div>
+</body>
+</html>
