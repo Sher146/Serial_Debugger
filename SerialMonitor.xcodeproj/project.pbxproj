@@ -1,10 +1,12 @@
 // !$*UTF8*$!
 {
 	archiveVersion = 1;
-	classes = {};
-	objectVersion = 56;
+	classes = {
+	};
+	objectVersion = 60;
 	objects = {
 
+/* Begin PBXBuildFile section */
 		A00000000000000000000001 /* SerialMonitorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000011 /* SerialMonitorApp.swift */; };
 		A00000000000000000000002 /* POSIXSerialPortAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000012 /* POSIXSerialPortAdapter.swift */; };
 		A00000000000000000000003 /* SerialCore in Frameworks */ = {isa = PBXBuildFile; productRef = A00000000000000000000031 /* SerialCore */; };
@@ -30,7 +32,26 @@
 		B00000000000000000000007 /* WindowConfigurationBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000017 /* WindowConfigurationBridge.swift */; };
 		B00000000000000000000008 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000018 /* Localizable.xcstrings */; };
 		B00000000000000000000009 /* SessionViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000019 /* SessionViewModelTests.swift */; };
+/* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		D6DA1EF63031943C0045CA98 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A00000000000000000000081 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A00000000000000000000051;
+			remoteInfo = SerialMonitor;
+		};
+		D6DA1EF73031943C0045CA98 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A00000000000000000000081 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A00000000000000000000051;
+			remoteInfo = SerialMonitor;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
 		A00000000000000000000011 /* SerialMonitorApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SerialMonitorApp.swift; sourceTree = "<group>"; };
 		A00000000000000000000012 /* POSIXSerialPortAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = POSIXSerialPortAdapter.swift; sourceTree = "<group>"; };
 		A00000000000000000000013 /* PseudoTerminal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PseudoTerminal.swift; sourceTree = "<group>"; };
@@ -58,54 +79,530 @@
 		B00000000000000000000017 /* WindowConfigurationBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowConfigurationBridge.swift; sourceTree = "<group>"; };
 		B00000000000000000000018 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		B00000000000000000000019 /* SessionViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionViewModelTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
 
-		A00000000000000000000021 /* App */ = {isa = PBXGroup; children = (A00000000000000000000011 /* SerialMonitorApp.swift */,); path = App; sourceTree = "<group>"; };
-		A00000000000000000000022 /* Infrastructure */ = {isa = PBXGroup; children = (A00000000000000000000012 /* POSIXSerialPortAdapter.swift */,); path = "Infrastructure/Serial"; sourceTree = "<group>"; };
-		A00000000000000000000023 /* Serial Tests */ = {isa = PBXGroup; children = (A00000000000000000000013 /* PseudoTerminal.swift */, A00000000000000000000014 /* POSIXSerialPortAdapterPTYTests.swift */); path = "Tests/Serial"; sourceTree = "<group>"; };
-		A00000000000000000000024 /* UI Tests */ = {isa = PBXGroup; children = (A00000000000000000000015 /* SerialMonitorUITests.swift */,); path = "Tests/UITests"; sourceTree = "<group>"; };
-		A00000000000000000000025 /* SerialMonitor */ = {isa = PBXGroup; children = (A00000000000000000000021 /* App */, A00000000000000000000022 /* Infrastructure */, A00000000000000000000023 /* Serial Tests */, A00000000000000000000024 /* UI Tests */, B00000000000000000000018 /* Localizable.xcstrings */, A00000000000000000000019 /* SerialMonitor.entitlements */); path = SerialMonitor; sourceTree = "<group>"; };
-		A00000000000000000000028 /* Domain */ = {isa = PBXGroup; children = (A0000000000000000000001A /* SessionDomain.swift */); path = "SerialMonitor/Domain"; sourceTree = "<group>"; };
-		A00000000000000000000029 /* Application */ = {isa = PBXGroup; children = (A0000000000000000000001B /* SessionEvent.swift */, A0000000000000000000001C /* SessionClient.swift */, A0000000000000000000001D /* LogServicing.swift */, A0000000000000000000001E /* TXSendQueue.swift */, A0000000000000000000001F /* SessionCoordinator.swift */); path = "SerialMonitor/Application"; sourceTree = "<group>"; };
-		A0000000000000000000002A /* Domain Tests */ = {isa = PBXGroup; children = (A00000000000000000000020 /* SessionDomainTests.swift */); path = "SerialMonitor/Tests/Domain"; sourceTree = "<group>"; };
-		A0000000000000000000002B /* Application Tests */ = {isa = PBXGroup; children = (A00000000000000000000030 /* MockSerialPort.swift */, A0000000000000000000003A /* SessionCoordinatorTests.swift */); path = "SerialMonitor/Tests/Application"; sourceTree = "<group>"; };
-		B00000000000000000000021 /* Session Feature */ = {isa = PBXGroup; children = (B00000000000000000000011 /* SessionViewModel.swift */, B00000000000000000000012 /* SessionPreviewClient.swift */, B00000000000000000000013 /* SessionView.swift */); path = "SerialMonitor/Features/Session"; sourceTree = "<group>"; };
-		B00000000000000000000022 /* Shared */ = {isa = PBXGroup; children = (B00000000000000000000014 /* DesignTokens.swift */, B00000000000000000000015 /* VisualEffectsSupport.swift */, B00000000000000000000016 /* Localization.swift */, B00000000000000000000017 /* WindowConfigurationBridge.swift */); path = "SerialMonitor/Shared"; sourceTree = "<group>"; };
-		B00000000000000000000023 /* Feature Tests */ = {isa = PBXGroup; children = (B00000000000000000000019 /* SessionViewModelTests.swift */); path = "SerialMonitor/Tests/Features"; sourceTree = "<group>"; };
-		A00000000000000000000026 /* Products */ = {isa = PBXGroup; children = (A00000000000000000000016 /* SerialMonitor.app */, A00000000000000000000017 /* SerialMonitorTests.xctest */, A00000000000000000000018 /* SerialMonitorUITests.xctest */); name = Products; sourceTree = "<group>"; };
-		A00000000000000000000027 = {isa = PBXGroup; children = (A00000000000000000000025 /* SerialMonitor */, A00000000000000000000028 /* Domain */, A00000000000000000000029 /* Application */, B00000000000000000000021 /* Session Feature */, B00000000000000000000022 /* Shared */, A0000000000000000000002A /* Domain Tests */, A0000000000000000000002B /* Application Tests */, B00000000000000000000023 /* Feature Tests */, A00000000000000000000026 /* Products */); sourceTree = "<group>"; };
+/* Begin PBXFrameworksBuildPhase section */
+		A00000000000000000000041 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A00000000000000000000003 /* SerialCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A00000000000000000000043 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A00000000000000000000006 /* SerialCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A00000000000000000000045 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
-		A00000000000000000000041 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (A00000000000000000000003 /* SerialCore in Frameworks */); runOnlyForDeploymentPostprocessing = 0; };
-		A00000000000000000000042 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A00000000000000000000001 /* SerialMonitorApp.swift in Sources */, A00000000000000000000002 /* POSIXSerialPortAdapter.swift in Sources */, A00000000000000000000008 /* SessionDomain.swift in Sources */, A00000000000000000000009 /* SessionEvent.swift in Sources */, A0000000000000000000000A /* SessionClient.swift in Sources */, A0000000000000000000000B /* LogServicing.swift in Sources */, A0000000000000000000000C /* TXSendQueue.swift in Sources */, A0000000000000000000000D /* SessionCoordinator.swift in Sources */, B00000000000000000000001 /* SessionViewModel.swift in Sources */, B00000000000000000000002 /* SessionPreviewClient.swift in Sources */, B00000000000000000000003 /* SessionView.swift in Sources */, B00000000000000000000004 /* DesignTokens.swift in Sources */, B00000000000000000000005 /* VisualEffectsSupport.swift in Sources */, B00000000000000000000006 /* Localization.swift in Sources */, B00000000000000000000007 /* WindowConfigurationBridge.swift in Sources */); runOnlyForDeploymentPostprocessing = 0; };
-		A00000000000000000000043 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (A00000000000000000000006 /* SerialCore in Frameworks */); runOnlyForDeploymentPostprocessing = 0; };
-		A00000000000000000000044 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A00000000000000000000004 /* PseudoTerminal.swift in Sources */, A00000000000000000000005 /* POSIXSerialPortAdapterPTYTests.swift in Sources */, A0000000000000000000000E /* SessionDomainTests.swift in Sources */, A0000000000000000000000F /* MockSerialPort.swift in Sources */, A00000000000000000000010 /* SessionCoordinatorTests.swift in Sources */, B00000000000000000000009 /* SessionViewModelTests.swift in Sources */); runOnlyForDeploymentPostprocessing = 0; };
-		A00000000000000000000045 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
-		A00000000000000000000046 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A00000000000000000000007 /* SerialMonitorUITests.swift in Sources */); runOnlyForDeploymentPostprocessing = 0; };
-		B00000000000000000000041 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (B00000000000000000000008 /* Localizable.xcstrings in Resources */); runOnlyForDeploymentPostprocessing = 0; };
+/* Begin PBXGroup section */
+		A00000000000000000000021 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000011 /* SerialMonitorApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000022 /* Infrastructure/Serial */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000012 /* POSIXSerialPortAdapter.swift */,
+			);
+			path = Infrastructure/Serial;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000023 /* Tests/Serial */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000013 /* PseudoTerminal.swift */,
+				A00000000000000000000014 /* POSIXSerialPortAdapterPTYTests.swift */,
+			);
+			path = Tests/Serial;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000024 /* Tests/UITests */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000015 /* SerialMonitorUITests.swift */,
+			);
+			path = Tests/UITests;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000025 /* SerialMonitor */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000021 /* App */,
+				A00000000000000000000022 /* Infrastructure/Serial */,
+				A00000000000000000000023 /* Tests/Serial */,
+				A00000000000000000000024 /* Tests/UITests */,
+				B00000000000000000000018 /* Localizable.xcstrings */,
+				A00000000000000000000019 /* SerialMonitor.entitlements */,
+			);
+			path = SerialMonitor;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000026 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000016 /* SerialMonitor.app */,
+				A00000000000000000000017 /* SerialMonitorTests.xctest */,
+				A00000000000000000000018 /* SerialMonitorUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000027 = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000025 /* SerialMonitor */,
+				A00000000000000000000028 /* SerialMonitor/Domain */,
+				A00000000000000000000029 /* SerialMonitor/Application */,
+				B00000000000000000000021 /* SerialMonitor/Features/Session */,
+				B00000000000000000000022 /* SerialMonitor/Shared */,
+				A0000000000000000000002A /* SerialMonitor/Tests/Domain */,
+				A0000000000000000000002B /* SerialMonitor/Tests/Application */,
+				B00000000000000000000023 /* SerialMonitor/Tests/Features */,
+				A00000000000000000000026 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A00000000000000000000028 /* SerialMonitor/Domain */ = {
+			isa = PBXGroup;
+			children = (
+				A0000000000000000000001A /* SessionDomain.swift */,
+			);
+			path = SerialMonitor/Domain;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000029 /* SerialMonitor/Application */ = {
+			isa = PBXGroup;
+			children = (
+				A0000000000000000000001B /* SessionEvent.swift */,
+				A0000000000000000000001C /* SessionClient.swift */,
+				A0000000000000000000001D /* LogServicing.swift */,
+				A0000000000000000000001E /* TXSendQueue.swift */,
+				A0000000000000000000001F /* SessionCoordinator.swift */,
+			);
+			path = SerialMonitor/Application;
+			sourceTree = "<group>";
+		};
+		A0000000000000000000002A /* SerialMonitor/Tests/Domain */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000020 /* SessionDomainTests.swift */,
+			);
+			path = SerialMonitor/Tests/Domain;
+			sourceTree = "<group>";
+		};
+		A0000000000000000000002B /* SerialMonitor/Tests/Application */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000030 /* MockSerialPort.swift */,
+				A0000000000000000000003A /* SessionCoordinatorTests.swift */,
+			);
+			path = SerialMonitor/Tests/Application;
+			sourceTree = "<group>";
+		};
+		B00000000000000000000021 /* SerialMonitor/Features/Session */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000011 /* SessionViewModel.swift */,
+				B00000000000000000000012 /* SessionPreviewClient.swift */,
+				B00000000000000000000013 /* SessionView.swift */,
+			);
+			path = SerialMonitor/Features/Session;
+			sourceTree = "<group>";
+		};
+		B00000000000000000000022 /* SerialMonitor/Shared */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000014 /* DesignTokens.swift */,
+				B00000000000000000000015 /* VisualEffectsSupport.swift */,
+				B00000000000000000000016 /* Localization.swift */,
+				B00000000000000000000017 /* WindowConfigurationBridge.swift */,
+			);
+			path = SerialMonitor/Shared;
+			sourceTree = "<group>";
+		};
+		B00000000000000000000023 /* SerialMonitor/Tests/Features */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000019 /* SessionViewModelTests.swift */,
+			);
+			path = SerialMonitor/Tests/Features;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
 
-		A00000000000000000000051 /* SerialMonitor */ = {isa = PBXNativeTarget; buildConfigurationList = A00000000000000000000061 /* Build configuration list for PBXNativeTarget "SerialMonitor" */; buildPhases = (A00000000000000000000042 /* Sources */, B00000000000000000000041 /* Resources */, A00000000000000000000041 /* Frameworks */); buildRules = (); dependencies = (); name = SerialMonitor; packageProductDependencies = (A00000000000000000000031 /* SerialCore */); productName = SerialMonitor; productReference = A00000000000000000000016 /* SerialMonitor.app */; productType = "com.apple.product-type.application"; };
-		A00000000000000000000052 /* SerialMonitorTests */ = {isa = PBXNativeTarget; buildConfigurationList = A00000000000000000000062 /* Build configuration list for PBXNativeTarget "SerialMonitorTests" */; buildPhases = (A00000000000000000000044 /* Sources */, A00000000000000000000043 /* Frameworks */); buildRules = (); dependencies = (A00000000000000000000071 /* PBXTargetDependency */); name = SerialMonitorTests; packageProductDependencies = (A00000000000000000000032 /* SerialCore */); productName = SerialMonitorTests; productReference = A00000000000000000000017 /* SerialMonitorTests.xctest */; productType = "com.apple.product-type.bundle.unit-test"; };
-		A00000000000000000000053 /* SerialMonitorUITests */ = {isa = PBXNativeTarget; buildConfigurationList = A00000000000000000000063 /* Build configuration list for PBXNativeTarget "SerialMonitorUITests" */; buildPhases = (A00000000000000000000046 /* Sources */, A00000000000000000000045 /* Frameworks */); buildRules = (); dependencies = (A00000000000000000000072 /* PBXTargetDependency */); name = SerialMonitorUITests; productName = SerialMonitorUITests; productReference = A00000000000000000000018 /* SerialMonitorUITests.xctest */; productType = "com.apple.product-type.bundle.ui-testing"; };
-		A00000000000000000000071 /* PBXTargetDependency */ = {isa = PBXTargetDependency; target = A00000000000000000000051 /* SerialMonitor */; };
-		A00000000000000000000072 /* PBXTargetDependency */ = {isa = PBXTargetDependency; target = A00000000000000000000051 /* SerialMonitor */; };
+/* Begin PBXNativeTarget section */
+		A00000000000000000000051 /* SerialMonitor */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A00000000000000000000061 /* Build configuration list for PBXNativeTarget "SerialMonitor" */;
+			buildPhases = (
+				A00000000000000000000042 /* Sources */,
+				B00000000000000000000041 /* Resources */,
+				A00000000000000000000041 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SerialMonitor;
+			packageProductDependencies = (
+				A00000000000000000000031 /* SerialCore */,
+			);
+			productName = SerialMonitor;
+			productReference = A00000000000000000000016 /* SerialMonitor.app */;
+			productType = "com.apple.product-type.application";
+		};
+		A00000000000000000000052 /* SerialMonitorTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A00000000000000000000062 /* Build configuration list for PBXNativeTarget "SerialMonitorTests" */;
+			buildPhases = (
+				A00000000000000000000044 /* Sources */,
+				A00000000000000000000043 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A00000000000000000000071 /* PBXTargetDependency */,
+			);
+			name = SerialMonitorTests;
+			packageProductDependencies = (
+				A00000000000000000000032 /* SerialCore */,
+			);
+			productName = SerialMonitorTests;
+			productReference = A00000000000000000000017 /* SerialMonitorTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		A00000000000000000000053 /* SerialMonitorUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A00000000000000000000063 /* Build configuration list for PBXNativeTarget "SerialMonitorUITests" */;
+			buildPhases = (
+				A00000000000000000000046 /* Sources */,
+				A00000000000000000000045 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A00000000000000000000072 /* PBXTargetDependency */,
+			);
+			name = SerialMonitorUITests;
+			productName = SerialMonitorUITests;
+			productReference = A00000000000000000000018 /* SerialMonitorUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
 
-		A00000000000000000000081 /* Project object */ = {isa = PBXProject; attributes = { LastSwiftUpdateCheck = 1600; LastUpgradeCheck = 1600; TargetAttributes = { A00000000000000000000051 = { CreatedOnToolsVersion = 16.0; }; A00000000000000000000052 = { CreatedOnToolsVersion = 16.0; TestTargetID = A00000000000000000000051; }; A00000000000000000000053 = { CreatedOnToolsVersion = 16.0; TestTargetID = A00000000000000000000051; }; }; }; buildConfigurationList = A00000000000000000000060 /* Build configuration list for PBXProject "SerialMonitor" */; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, Base, "zh-Hans"); mainGroup = A00000000000000000000027; packageReferences = (A00000000000000000000091 /* XCLocalSwiftPackageReference "SerialCore" */); productRefGroup = A00000000000000000000026 /* Products */; projectDirPath = ""; projectRoot = ""; targets = (A00000000000000000000051 /* SerialMonitor */, A00000000000000000000052 /* SerialMonitorTests */, A00000000000000000000053 /* SerialMonitorUITests */); };
-		A00000000000000000000091 /* XCLocalSwiftPackageReference "SerialCore" */ = {isa = XCLocalSwiftPackageReference; relativePath = Packages/SerialCore; };
-		A00000000000000000000031 /* SerialCore */ = {isa = XCSwiftPackageProductDependency; package = A00000000000000000000091 /* XCLocalSwiftPackageReference "SerialCore" */; productName = SerialCore; };
-		A00000000000000000000032 /* SerialCore */ = {isa = XCSwiftPackageProductDependency; package = A00000000000000000000091 /* XCLocalSwiftPackageReference "SerialCore" */; productName = SerialCore; };
+/* Begin PBXProject section */
+		A00000000000000000000081 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					A00000000000000000000051 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+					A00000000000000000000052 = {
+						CreatedOnToolsVersion = 16.0;
+						TestTargetID = A00000000000000000000051;
+					};
+					A00000000000000000000053 = {
+						CreatedOnToolsVersion = 16.0;
+						TestTargetID = A00000000000000000000051;
+					};
+				};
+			};
+			buildConfigurationList = A00000000000000000000060 /* Build configuration list for PBXProject "SerialMonitor" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+				"zh-Hans",
+			);
+			mainGroup = A00000000000000000000027;
+			packageReferences = (
+				A00000000000000000000091 /* XCLocalSwiftPackageReference "Packages/SerialCore" */,
+			);
+			productRefGroup = A00000000000000000000026 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A00000000000000000000051 /* SerialMonitor */,
+				A00000000000000000000052 /* SerialMonitorTests */,
+				A00000000000000000000053 /* SerialMonitorUITests */,
+			);
+		};
+/* End PBXProject section */
 
-		A00000000000000000000101 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = { ALWAYS_SEARCH_USER_PATHS = NO; MACOSX_DEPLOYMENT_TARGET = 14.0; ONLY_ACTIVE_ARCH = YES; SWIFT_STRICT_CONCURRENCY = complete; SWIFT_VERSION = 6.0; }; name = Debug; };
-		A00000000000000000000102 /* Release */ = {isa = XCBuildConfiguration; buildSettings = { MACOSX_DEPLOYMENT_TARGET = 14.0; SWIFT_COMPILATION_MODE = wholemodule; SWIFT_STRICT_CONCURRENCY = complete; SWIFT_VERSION = 6.0; }; name = Release; };
-		A00000000000000000000111 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = { CODE_SIGN_ENTITLEMENTS = SerialMonitor/SerialMonitor.entitlements; CODE_SIGN_STYLE = Automatic; ENABLE_TESTABILITY = YES; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_CFBundleDisplayName = "Serial Monitor"; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks"; MACOSX_DEPLOYMENT_TARGET = 14.0; PRODUCT_BUNDLE_IDENTIFIER = com.serialmonitor.app; PRODUCT_MODULE_NAME = "$(PRODUCT_NAME:c99extidentifier)"; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_STRICT_CONCURRENCY = complete; SWIFT_VERSION = 6.0; }; name = Debug; };
-		A00000000000000000000112 /* Release */ = {isa = XCBuildConfiguration; buildSettings = { CODE_SIGN_ENTITLEMENTS = SerialMonitor/SerialMonitor.entitlements; CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_CFBundleDisplayName = "Serial Monitor"; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks"; MACOSX_DEPLOYMENT_TARGET = 14.0; PRODUCT_BUNDLE_IDENTIFIER = com.serialmonitor.app; PRODUCT_MODULE_NAME = "$(PRODUCT_NAME:c99extidentifier)"; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_COMPILATION_MODE = wholemodule; SWIFT_STRICT_CONCURRENCY = complete; SWIFT_VERSION = 6.0; }; name = Release; };
-		A00000000000000000000121 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = { BUNDLE_LOADER = "$(TEST_HOST)"; GENERATE_INFOPLIST_FILE = YES; MACOSX_DEPLOYMENT_TARGET = 14.0; PRODUCT_BUNDLE_IDENTIFIER = com.serialmonitor.app.tests; PRODUCT_MODULE_NAME = "$(PRODUCT_NAME:c99extidentifier)"; PRODUCT_NAME = "$(TARGET_NAME)"; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SerialMonitor.app/Contents/MacOS/SerialMonitor"; SWIFT_STRICT_CONCURRENCY = complete; SWIFT_VERSION = 6.0; }; name = Debug; };
-		A00000000000000000000122 /* Release */ = {isa = XCBuildConfiguration; buildSettings = { BUNDLE_LOADER = "$(TEST_HOST)"; GENERATE_INFOPLIST_FILE = YES; MACOSX_DEPLOYMENT_TARGET = 14.0; PRODUCT_BUNDLE_IDENTIFIER = com.serialmonitor.app.tests; PRODUCT_MODULE_NAME = "$(PRODUCT_NAME:c99extidentifier)"; PRODUCT_NAME = "$(TARGET_NAME)"; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SerialMonitor.app/Contents/MacOS/SerialMonitor"; SWIFT_STRICT_CONCURRENCY = complete; SWIFT_VERSION = 6.0; }; name = Release; };
-		A00000000000000000000131 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = { GENERATE_INFOPLIST_FILE = YES; MACOSX_DEPLOYMENT_TARGET = 14.0; PRODUCT_BUNDLE_IDENTIFIER = com.serialmonitor.app.uitests; PRODUCT_MODULE_NAME = "$(PRODUCT_NAME:c99extidentifier)"; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_STRICT_CONCURRENCY = complete; SWIFT_VERSION = 6.0; TEST_TARGET_NAME = SerialMonitor; }; name = Debug; };
-		A00000000000000000000132 /* Release */ = {isa = XCBuildConfiguration; buildSettings = { GENERATE_INFOPLIST_FILE = YES; MACOSX_DEPLOYMENT_TARGET = 14.0; PRODUCT_BUNDLE_IDENTIFIER = com.serialmonitor.app.uitests; PRODUCT_MODULE_NAME = "$(PRODUCT_NAME:c99extidentifier)"; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_STRICT_CONCURRENCY = complete; SWIFT_VERSION = 6.0; TEST_TARGET_NAME = SerialMonitor; }; name = Release; };
+/* Begin PBXResourcesBuildPhase section */
+		B00000000000000000000041 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B00000000000000000000008 /* Localizable.xcstrings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
-		A00000000000000000000060 /* Build configuration list for PBXProject "SerialMonitor" */ = {isa = XCConfigurationList; buildConfigurations = (A00000000000000000000101 /* Debug */, A00000000000000000000102 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
-		A00000000000000000000061 /* Build configuration list for PBXNativeTarget "SerialMonitor" */ = {isa = XCConfigurationList; buildConfigurations = (A00000000000000000000111 /* Debug */, A00000000000000000000112 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
-		A00000000000000000000062 /* Build configuration list for PBXNativeTarget "SerialMonitorTests" */ = {isa = XCConfigurationList; buildConfigurations = (A00000000000000000000121 /* Debug */, A00000000000000000000122 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
-		A00000000000000000000063 /* Build configuration list for PBXNativeTarget "SerialMonitorUITests" */ = {isa = XCConfigurationList; buildConfigurations = (A00000000000000000000131 /* Debug */, A00000000000000000000132 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+/* Begin PBXSourcesBuildPhase section */
+		A00000000000000000000042 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A00000000000000000000001 /* SerialMonitorApp.swift in Sources */,
+				A00000000000000000000002 /* POSIXSerialPortAdapter.swift in Sources */,
+				A00000000000000000000008 /* SessionDomain.swift in Sources */,
+				A00000000000000000000009 /* SessionEvent.swift in Sources */,
+				A0000000000000000000000A /* SessionClient.swift in Sources */,
+				A0000000000000000000000B /* LogServicing.swift in Sources */,
+				A0000000000000000000000C /* TXSendQueue.swift in Sources */,
+				A0000000000000000000000D /* SessionCoordinator.swift in Sources */,
+				B00000000000000000000001 /* SessionViewModel.swift in Sources */,
+				B00000000000000000000002 /* SessionPreviewClient.swift in Sources */,
+				B00000000000000000000003 /* SessionView.swift in Sources */,
+				B00000000000000000000004 /* DesignTokens.swift in Sources */,
+				B00000000000000000000005 /* VisualEffectsSupport.swift in Sources */,
+				B00000000000000000000006 /* Localization.swift in Sources */,
+				B00000000000000000000007 /* WindowConfigurationBridge.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A00000000000000000000044 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A00000000000000000000004 /* PseudoTerminal.swift in Sources */,
+				A00000000000000000000005 /* POSIXSerialPortAdapterPTYTests.swift in Sources */,
+				A0000000000000000000000E /* SessionDomainTests.swift in Sources */,
+				A0000000000000000000000F /* MockSerialPort.swift in Sources */,
+				A00000000000000000000010 /* SessionCoordinatorTests.swift in Sources */,
+				B00000000000000000000009 /* SessionViewModelTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A00000000000000000000046 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A00000000000000000000007 /* SerialMonitorUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A00000000000000000000071 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A00000000000000000000051 /* SerialMonitor */;
+			targetProxy = D6DA1EF63031943C0045CA98 /* PBXContainerItemProxy */;
+		};
+		A00000000000000000000072 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A00000000000000000000051 /* SerialMonitor */;
+			targetProxy = D6DA1EF73031943C0045CA98 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		A00000000000000000000101 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		A00000000000000000000102 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		A00000000000000000000111 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = SerialMonitor/SerialMonitor.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				ENABLE_TESTABILITY = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Serial Monitor";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.serialmonitor.app;
+				PRODUCT_MODULE_NAME = "$(PRODUCT_NAME:c99extidentifier)";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		A00000000000000000000112 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = SerialMonitor/SerialMonitor.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Serial Monitor";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.serialmonitor.app;
+				PRODUCT_MODULE_NAME = "$(PRODUCT_NAME:c99extidentifier)";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		A00000000000000000000121 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.serialmonitor.app.tests;
+				PRODUCT_MODULE_NAME = "$(PRODUCT_NAME:c99extidentifier)";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SerialMonitor.app/Contents/MacOS/SerialMonitor";
+			};
+			name = Debug;
+		};
+		A00000000000000000000122 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.serialmonitor.app.tests;
+				PRODUCT_MODULE_NAME = "$(PRODUCT_NAME:c99extidentifier)";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SerialMonitor.app/Contents/MacOS/SerialMonitor";
+			};
+			name = Release;
+		};
+		A00000000000000000000131 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.serialmonitor.app.uitests;
+				PRODUCT_MODULE_NAME = "$(PRODUCT_NAME:c99extidentifier)";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TEST_TARGET_NAME = SerialMonitor;
+			};
+			name = Debug;
+		};
+		A00000000000000000000132 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.serialmonitor.app.uitests;
+				PRODUCT_MODULE_NAME = "$(PRODUCT_NAME:c99extidentifier)";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TEST_TARGET_NAME = SerialMonitor;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A00000000000000000000060 /* Build configuration list for PBXProject "SerialMonitor" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A00000000000000000000101 /* Debug */,
+				A00000000000000000000102 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A00000000000000000000061 /* Build configuration list for PBXNativeTarget "SerialMonitor" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A00000000000000000000111 /* Debug */,
+				A00000000000000000000112 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A00000000000000000000062 /* Build configuration list for PBXNativeTarget "SerialMonitorTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A00000000000000000000121 /* Debug */,
+				A00000000000000000000122 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A00000000000000000000063 /* Build configuration list for PBXNativeTarget "SerialMonitorUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A00000000000000000000131 /* Debug */,
+				A00000000000000000000132 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		A00000000000000000000091 /* XCLocalSwiftPackageReference "Packages/SerialCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/SerialCore;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A00000000000000000000031 /* SerialCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A00000000000000000000091 /* XCLocalSwiftPackageReference "Packages/SerialCore" */;
+			productName = SerialCore;
+		};
+		A00000000000000000000032 /* SerialCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A00000000000000000000091 /* XCLocalSwiftPackageReference "Packages/SerialCore" */;
+			productName = SerialCore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = A00000000000000000000081 /* Project object */;
 }
