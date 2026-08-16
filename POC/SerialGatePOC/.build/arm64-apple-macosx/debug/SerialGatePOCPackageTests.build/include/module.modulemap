@@ -1,3 +1,0 @@
-module SerialGatePOCPackageTests {
-    header "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/.build/arm64-apple-macosx/debug/SerialGatePOCPackageTests.build/include/SerialGatePOCPackageTests-Swift.h"
-}

@@ -1,3 +1,0 @@
-module Logput {
-    header "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/.build/arm64-apple-macosx/debug/Logput.build/include/Logput-Swift.h"
-}

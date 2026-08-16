@@ -1,3 +1,0 @@
-module SerialGateAdapter {
-    header "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/.build/arm64-apple-macosx/release/SerialGateAdapter.build/include/SerialGateAdapter-Swift.h"
-}
