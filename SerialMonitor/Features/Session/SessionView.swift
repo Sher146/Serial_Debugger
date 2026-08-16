@@ -12,11 +12,16 @@ struct SessionView: View {
     var body: some View {
         VStack(spacing: 0) {
             workspace
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .layoutPriority(1)
+                .clipped()
             Divider()
             SendEditor(model: model)
+                .frame(height: 152)
 
             Divider()
             SessionStatusBar(model: model)
+                .frame(height: 28)
         }
         .background(Color(nsColor: .windowBackgroundColor))
         .background(WindowMinimumSizeBridge(minimumSize: NSSize(width: 980, height: 680)))
@@ -27,18 +32,18 @@ struct SessionView: View {
 
     @ViewBuilder
     private var workspace: some View {
-        if showsPresets {
-            ViewThatFits(in: .horizontal) {
+        GeometryReader { proxy in
+            if showsPresets && proxy.size.width >= 1_040 {
                 HSplitView {
                     ReceiveConsole(model: model)
                         .frame(minWidth: 700)
                     PresetPlaceholder()
                         .frame(minWidth: 220, idealWidth: 250, maxWidth: 320)
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
                 ReceiveConsole(model: model)
             }
-        } else {
-            ReceiveConsole(model: model)
         }
     }
 }
@@ -209,36 +214,9 @@ private struct ReceiveConsole: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: DesignTokens.compactSpacing) {
-                Text(L10n.records).font(.subheadline.weight(.semibold))
-                Divider()
-                ControlGroup {
-                    Button(model.isPaused ? L10n.resume : L10n.pause, systemImage: model.isPaused ? "play.fill" : "pause.fill") { model.togglePause() }
-                        .accessibilityIdentifier("console.pause")
-                        .help(model.isPaused ? L10n.resume : L10n.pause)
-                    Button(L10n.clear, systemImage: "trash") { model.clearRecords() }
-                        .disabled(model.visibleRecords.isEmpty)
-                        .accessibilityIdentifier("console.clear")
-                        .help(L10n.clear)
-                }
-                ControlGroup {
-                    Picker("", selection: $model.receiveFormat) {
-                        Text("ASCII").tag(DisplayFormat.ascii)
-                        Text("HEX").tag(DisplayFormat.hex)
-                    }
-                    .pickerStyle(.segmented)
-                    .frame(width: 112)
-                    .accessibilityLabel("接收显示格式")
-                    .accessibilityIdentifier("console.display-format")
-                    Toggle(L10n.timestamp, isOn: $model.showsTimestamps).toggleStyle(.button)
-                    Toggle(L10n.follow, isOn: $model.followsLatest).toggleStyle(.button)
-                }
-                Spacer()
-                Text("\(model.visibleRecords.count) 条").foregroundStyle(.secondary).font(.caption.monospacedDigit())
-            }
-            .padding(.horizontal, DesignTokens.standardSpacing)
-            .padding(.vertical, 6)
-            .background(.bar)
+            ConsoleToolbar(model: model)
+                .fixedSize(horizontal: false, vertical: true)
+                .layoutPriority(1)
 
             if model.isPaused {
                 HStack {
@@ -251,6 +229,7 @@ private struct ReceiveConsole: View {
                 .padding(.horizontal, DesignTokens.standardSpacing)
                 .padding(.vertical, 6)
                 .background(Color.sessionAttention.opacity(0.1))
+                .zIndex(1)
                 .accessibilityIdentifier("console.paused-banner")
             }
 
@@ -258,8 +237,14 @@ private struct ReceiveConsole: View {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 2) {
                         if model.visibleRecords.isEmpty {
-                            ContentUnavailableView(L10n.noRecords, systemImage: "text.line.first.and.arrowtriangle.forward")
-                                .frame(maxWidth: .infinity, minHeight: 280)
+                            VStack(spacing: DesignTokens.compactSpacing) {
+                                Image(systemName: "text.line.first.and.arrowtriangle.forward")
+                                    .font(.title3)
+                                Text(L10n.noRecords)
+                                    .font(.subheadline)
+                            }
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, minHeight: 280)
                         } else {
                             ForEach(model.visibleRecords) { record in
                                 ConsoleRecordRow(record: record, format: model.receiveFormat, showsTimestamp: model.showsTimestamps)
@@ -282,6 +267,46 @@ private struct ReceiveConsole: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityIdentifier("console.records")
+    }
+}
+
+private struct ConsoleToolbar: View {
+    @ObservedObject var model: SessionViewModel
+
+    var body: some View {
+        HStack(spacing: DesignTokens.compactSpacing) {
+            Text(L10n.records).font(.subheadline.weight(.semibold))
+            ToolbarSeparator()
+            ControlGroup {
+                Button(model.isPaused ? L10n.resume : L10n.pause, systemImage: model.isPaused ? "play.fill" : "pause.fill") { model.togglePause() }
+                    .accessibilityIdentifier("console.pause")
+                    .help(model.isPaused ? L10n.resume : L10n.pause)
+                Button(L10n.clear, systemImage: "trash") { model.clearRecords() }
+                    .disabled(model.visibleRecords.isEmpty)
+                    .accessibilityIdentifier("console.clear")
+                    .help(L10n.clear)
+            }
+            ToolbarSeparator()
+            ControlGroup {
+                Picker("", selection: $model.receiveFormat) {
+                    Text("ASCII").tag(DisplayFormat.ascii)
+                    Text("HEX").tag(DisplayFormat.hex)
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 112)
+                .accessibilityLabel("接收显示格式")
+                .accessibilityIdentifier("console.display-format")
+                Toggle(L10n.timestamp, isOn: $model.showsTimestamps).toggleStyle(.button)
+                Toggle(L10n.follow, isOn: $model.followsLatest).toggleStyle(.button)
+            }
+            Spacer()
+            Text("\(model.visibleRecords.count) 条")
+                .foregroundStyle(.secondary)
+                .font(.caption.monospacedDigit())
+        }
+        .padding(.horizontal, DesignTokens.standardSpacing)
+        .padding(.vertical, 6)
+        .background(.bar)
     }
 }
 
@@ -323,7 +348,7 @@ private struct SendEditor: View {
         VStack(spacing: 0) {
             HStack(spacing: DesignTokens.compactSpacing) {
                 Text(L10n.send).font(.subheadline.weight(.semibold))
-                Divider()
+                ToolbarSeparator()
                 Picker("", selection: $model.sendFormat) {
                     Text("ASCII").tag(DisplayFormat.ascii)
                     Text("HEX").tag(DisplayFormat.hex)
@@ -344,7 +369,9 @@ private struct SendEditor: View {
                 Spacer()
             }
             .padding(.horizontal, DesignTokens.standardSpacing)
-            .padding(.vertical, 6)
+            .frame(height: 36)
+            .fixedSize(horizontal: false, vertical: true)
+            .layoutPriority(1)
             .background(.bar)
 
             HStack(alignment: .bottom, spacing: DesignTokens.standardSpacing) {
@@ -402,15 +429,31 @@ private struct SendEditor: View {
 
 private struct PresetPlaceholder: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.standardSpacing) {
-            Label(L10n.presets, systemImage: "list.bullet.rectangle")
-                .font(.headline)
-            Divider()
-            ContentUnavailableView(L10n.presetsPlaceholder, systemImage: "clock.badge.questionmark")
-                .font(.subheadline)
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Label(L10n.presets, systemImage: "list.bullet.rectangle")
+                    .font(.subheadline.weight(.semibold))
+                Spacer()
+            }
+            .padding(.horizontal, DesignTokens.standardSpacing)
+            .padding(.vertical, 8)
+            .background(.bar)
+            .overlay(alignment: .bottom) { Divider() }
+            .fixedSize(horizontal: false, vertical: true)
+            .layoutPriority(1)
+
+            VStack(alignment: .leading, spacing: DesignTokens.compactSpacing) {
+                Image(systemName: "clock.badge.questionmark")
+                    .font(.title3)
+                    .foregroundStyle(.secondary)
+                Text(L10n.presetsPlaceholder)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(DesignTokens.standardSpacing)
             Spacer()
         }
-        .padding(DesignTokens.standardSpacing)
         .frame(maxHeight: .infinity, alignment: .top)
         .background(.bar)
         .accessibilityIdentifier("presets.placeholder")
@@ -446,8 +489,8 @@ private struct SessionStatusBar: View {
         }
         .font(.caption)
         .padding(.horizontal, DesignTokens.standardSpacing)
-        .padding(.vertical, 7)
-        .sessionGlass(cornerRadius: 0)
+        .frame(height: 26)
+        .background(.bar)
         .accessibilityIdentifier("session.status-bar")
     }
 
@@ -474,6 +517,15 @@ private struct SessionStatusBar: View {
         if count < 1_024 { return "\(count) B" }
         if count < 1_024 * 1_024 { return String(format: "%.1f KB", Double(count) / 1_024) }
         return String(format: "%.1f MB", Double(count) / (1_024 * 1_024))
+    }
+}
+
+private struct ToolbarSeparator: View {
+    var body: some View {
+        Rectangle()
+            .fill(Color(nsColor: .separatorColor))
+            .frame(width: 1, height: 16)
+            .accessibilityHidden(true)
     }
 }
 
