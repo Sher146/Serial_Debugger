@@ -11,52 +11,53 @@ struct SessionView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            SessionToolbar(model: model, showsPresets: $showsPresets)
-                .padding(DesignTokens.compactSpacing)
-                .sessionGlass(cornerRadius: DesignTokens.panelCornerRadius)
-                .padding([.horizontal, .top], DesignTokens.compactSpacing)
+            workspace
+            Divider()
+            SendEditor(model: model)
 
-            HStack(spacing: DesignTokens.compactSpacing) {
-                VStack(spacing: 0) {
-                    ReceiveConsole(model: model)
-                    SendEditor(model: model)
-                }
-                .background(Color.consoleSurface, in: RoundedRectangle(cornerRadius: DesignTokens.containerCornerRadius, style: .continuous))
-
-                if showsPresets {
-                    PresetPlaceholder()
-                        .frame(minWidth: 220, idealWidth: 250, maxWidth: 280)
-                        .sessionGlass(cornerRadius: DesignTokens.panelCornerRadius)
-                }
-            }
-            .padding(DesignTokens.compactSpacing)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-
+            Divider()
             SessionStatusBar(model: model)
-                .padding(.horizontal, DesignTokens.compactSpacing)
-                .padding(.bottom, DesignTokens.compactSpacing)
         }
         .background(Color(nsColor: .windowBackgroundColor))
         .background(WindowMinimumSizeBridge(minimumSize: NSSize(width: 980, height: 680)))
+        .toolbar { SessionToolbarContent(model: model, showsPresets: $showsPresets) }
         .task { model.start() }
         .accessibilityIdentifier("session.workspace")
     }
+
+    @ViewBuilder
+    private var workspace: some View {
+        if showsPresets {
+            ViewThatFits(in: .horizontal) {
+                HSplitView {
+                    ReceiveConsole(model: model)
+                        .frame(minWidth: 700)
+                    PresetPlaceholder()
+                        .frame(minWidth: 220, idealWidth: 250, maxWidth: 320)
+                }
+                ReceiveConsole(model: model)
+            }
+        } else {
+            ReceiveConsole(model: model)
+        }
+    }
 }
 
-private struct SessionToolbar: View {
+private struct SessionToolbarContent: ToolbarContent {
     @ObservedObject var model: SessionViewModel
     @Binding var showsPresets: Bool
     @State private var showsAdvancedParameters = false
 
     private let baudRates = [300, 1_200, 2_400, 4_800, 9_600, 19_200, 38_400, 57_600, 115_200, 230_400]
 
-    var body: some View {
-        HStack(spacing: DesignTokens.compactSpacing) {
-            Label(L10n.appName, systemImage: "cable.connector")
-                .font(.headline)
+    var body: some ToolbarContent {
+        ToolbarItem(placement: .navigation) {
+            Image(systemName: "cable.connector")
+                .accessibilityLabel(L10n.appName)
                 .accessibilityIdentifier("session.title")
-            Divider()
+        }
 
+        ToolbarItemGroup(placement: .automatic) {
             Picker(L10n.port, selection: $model.configuration.path) {
                 if model.ports.isEmpty {
                     Text("—").tag("")
@@ -66,7 +67,7 @@ private struct SessionToolbar: View {
                 }
             }
             .labelsHidden()
-            .frame(minWidth: 150, maxWidth: 220)
+            .frame(minWidth: 140, idealWidth: 180, maxWidth: 220)
             .disabled(model.isConfigurationLocked)
             .accessibilityLabel(L10n.port)
             .accessibilityIdentifier("session.port-picker")
@@ -85,7 +86,9 @@ private struct SessionToolbar: View {
             .disabled(model.isConfigurationLocked)
             .accessibilityLabel(L10n.baudRate)
 
-            Button(parameterSummary, systemImage: "slider.horizontal.3") { showsAdvancedParameters.toggle() }
+            Button(parameterSummary, systemImage: "slider.horizontal.3") {
+                showsAdvancedParameters.toggle()
+            }
                 .disabled(model.isConfigurationLocked)
                 .popover(isPresented: $showsAdvancedParameters, arrowEdge: .bottom) {
                     AdvancedParametersPopover(configuration: $model.configuration)
@@ -94,20 +97,20 @@ private struct SessionToolbar: View {
                 }
                 .accessibilityLabel(L10n.parameters)
                 .accessibilityIdentifier("session.parameters")
+                .help(L10n.advancedParameters)
+        }
 
+        ToolbarItemGroup(placement: .primaryAction) {
             SessionStatusBadge(state: model.sessionState, title: model.statusTitle)
-            Spacer(minLength: 0)
-
             Button(L10n.presets, systemImage: "sidebar.trailing") { showsPresets.toggle() }
-                .buttonStyle(.bordered)
                 .accessibilityIdentifier("session.presets-toggle")
+                .help(showsPresets ? "隐藏预设检查器" : "显示预设检查器")
 
             Button(connectionButtonTitle) { model.connectOrDisconnect() }
                 .buttonStyle(.borderedProminent)
                 .tint(connectionButtonTint)
                 .accessibilityIdentifier("session.connect-button")
         }
-        .controlSize(.small)
     }
 
     private var parameterSummary: String {
@@ -209,25 +212,32 @@ private struct ReceiveConsole: View {
             HStack(spacing: DesignTokens.compactSpacing) {
                 Text(L10n.records).font(.subheadline.weight(.semibold))
                 Divider()
-                Button(model.isPaused ? L10n.resume : L10n.pause, systemImage: model.isPaused ? "play.fill" : "pause.fill") { model.togglePause() }
-                    .accessibilityIdentifier("console.pause")
-                Button(L10n.clear, systemImage: "trash") { model.clearRecords() }
-                    .disabled(model.visibleRecords.isEmpty)
-                    .accessibilityIdentifier("console.clear")
-                Picker("", selection: $model.receiveFormat) {
-                    Text("ASCII").tag(DisplayFormat.ascii)
-                    Text("HEX").tag(DisplayFormat.hex)
+                ControlGroup {
+                    Button(model.isPaused ? L10n.resume : L10n.pause, systemImage: model.isPaused ? "play.fill" : "pause.fill") { model.togglePause() }
+                        .accessibilityIdentifier("console.pause")
+                        .help(model.isPaused ? L10n.resume : L10n.pause)
+                    Button(L10n.clear, systemImage: "trash") { model.clearRecords() }
+                        .disabled(model.visibleRecords.isEmpty)
+                        .accessibilityIdentifier("console.clear")
+                        .help(L10n.clear)
                 }
-                .pickerStyle(.segmented)
-                .frame(width: 130)
-                .accessibilityLabel("接收显示格式")
-                .accessibilityIdentifier("console.display-format")
-                Toggle(L10n.timestamp, isOn: $model.showsTimestamps).toggleStyle(.button)
-                Toggle(L10n.follow, isOn: $model.followsLatest).toggleStyle(.button)
+                ControlGroup {
+                    Picker("", selection: $model.receiveFormat) {
+                        Text("ASCII").tag(DisplayFormat.ascii)
+                        Text("HEX").tag(DisplayFormat.hex)
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 112)
+                    .accessibilityLabel("接收显示格式")
+                    .accessibilityIdentifier("console.display-format")
+                    Toggle(L10n.timestamp, isOn: $model.showsTimestamps).toggleStyle(.button)
+                    Toggle(L10n.follow, isOn: $model.followsLatest).toggleStyle(.button)
+                }
                 Spacer()
                 Text("\(model.visibleRecords.count) 条").foregroundStyle(.secondary).font(.caption.monospacedDigit())
             }
-            .padding(DesignTokens.compactSpacing)
+            .padding(.horizontal, DesignTokens.standardSpacing)
+            .padding(.vertical, 6)
             .background(.bar)
 
             if model.isPaused {
@@ -300,7 +310,7 @@ private struct ConsoleRecordRow: View {
         .font(DesignTokens.consoleFont)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, DesignTokens.standardSpacing)
-        .padding(.vertical, 2)
+        .padding(.vertical, 1)
         .accessibilityLabel("\(record.direction.rawValue) \(RecordFormatter.string(for: record, format: format))")
     }
 }
@@ -333,7 +343,8 @@ private struct SendEditor: View {
                 .accessibilityIdentifier("send.line-ending")
                 Spacer()
             }
-            .padding(DesignTokens.compactSpacing)
+            .padding(.horizontal, DesignTokens.standardSpacing)
+            .padding(.vertical, 6)
             .background(.bar)
 
             HStack(alignment: .bottom, spacing: DesignTokens.standardSpacing) {
@@ -341,8 +352,13 @@ private struct SendEditor: View {
                     .font(DesignTokens.consoleFont)
                     .focused($editorFocused)
                     .scrollContentBackground(.hidden)
-                    .padding(6)
-                    .background(Color.consoleSurface, in: RoundedRectangle(cornerRadius: DesignTokens.controlCornerRadius, style: .continuous))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 4)
+                    .frame(minHeight: 82, maxHeight: 110)
+                    .background(Color.consoleSurface)
+                    .overlay {
+                        Rectangle().stroke(Color(nsColor: .separatorColor), lineWidth: 1)
+                    }
                     .overlay(alignment: .topLeading) {
                         if model.sendText.isEmpty {
                             Text(model.isConnected ? L10n.sendPlaceholder : L10n.connectToSend)
@@ -366,7 +382,8 @@ private struct SendEditor: View {
                 .disabled(!model.canSend)
                 .accessibilityIdentifier("send.button")
             }
-            .padding(DesignTokens.standardSpacing)
+            .padding(.horizontal, DesignTokens.standardSpacing)
+            .padding(.vertical, 8)
 
             if let error = model.sendValidationError {
                 Label(error.localizedDescription, systemImage: "exclamationmark.triangle.fill")
@@ -394,6 +411,8 @@ private struct PresetPlaceholder: View {
             Spacer()
         }
         .padding(DesignTokens.standardSpacing)
+        .frame(maxHeight: .infinity, alignment: .top)
+        .background(.bar)
         .accessibilityIdentifier("presets.placeholder")
     }
 }
@@ -428,7 +447,7 @@ private struct SessionStatusBar: View {
         .font(.caption)
         .padding(.horizontal, DesignTokens.standardSpacing)
         .padding(.vertical, 7)
-        .sessionGlass(cornerRadius: DesignTokens.controlCornerRadius)
+        .sessionGlass(cornerRadius: 0)
         .accessibilityIdentifier("session.status-bar")
     }
 

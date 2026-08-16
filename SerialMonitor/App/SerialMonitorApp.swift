@@ -11,6 +11,7 @@ struct SerialMonitorApp: App {
             SessionView(client: isRunningUITests ? uiTestClient : coordinator)
         }
         .defaultSize(width: 1_180, height: 760)
+        .windowToolbarStyle(.unifiedCompact)
     }
 
     private var isRunningUITests: Bool {
