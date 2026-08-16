@@ -7,3 +7,4 @@ build/
 *.dSYM
 *.xcuserstate
 xcuserdata/
+SerialMonitor.xcodeproj/project.xcworkspace/

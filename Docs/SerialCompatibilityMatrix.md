@@ -1,6 +1,6 @@
 # Serial 兼容性矩阵
 
-> P0 状态：未决。2026-08-16 当前机器仅有 Command Line Tools（Swift 6.3.3），`xcodebuild`/XCTest 不可用；仅检测到 Bluetooth/debug-console，未检测到 USB-UART 硬件。不得据此做库选型结论。
+> P0 状态：未决。2026-08-16 已使用 Xcode 26.6 完成无签名 Debug 构建与 PTY Unit 测试；当前未配置代码签名身份，且仅检测到 Bluetooth/debug-console，未检测到 USB-UART 硬件。不得据此做库选型结论。
 
 | 设备 | 发现 | 9600 打开/回环 | 115200 打开/回环 | 热拔出 | 占用错误 | Sandbox | 结果 | 备注 |
 |---|---|---|---|---|---|---|---|---|

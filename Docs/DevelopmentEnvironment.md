@@ -4,7 +4,7 @@
 
 ## 当前状态（2026-08-16）
 
-当前开发机为 Apple Silicon、macOS 26.6.1，已安装 Swift 6.3.3 Command Line Tools，但未安装完整 Xcode：`xcodebuild`、XCTest 和 `simctl` 均不可用，也没有可用代码签名身份。本文件将这项状态明确记录为环境未就绪，不改变 P0 的“未决”结论。
+当前开发机为 Apple Silicon、macOS 26.6.1，完整 Xcode 26.6（17F113）已安装并由 `xcode-select` 选中，`xcodebuild`、XCTest、`simctl` 和本地 Swift Package 解析均可用。无签名 Debug 构建及两项 PTY Unit 测试已通过；当前仍没有可用代码签名身份，且不执行真实串口硬件测试。因此 P0 的串口实现结论仍为“未决”。
 
 ## 一次性安装
 
@@ -37,7 +37,7 @@
 
 ```zsh
 zsh Scripts/verify-development-environment.sh
-xcodebuild -project SerialMonitor.xcodeproj -scheme SerialMonitor -destination 'platform=macOS' test
+xcodebuild -project SerialMonitor.xcodeproj -scheme SerialMonitor -destination 'platform=macOS' ONLY_ACTIVE_ARCH=YES test
 ```
 
-第二条命令必须在完整 Xcode、开发签名配置妥当后运行。它会覆盖 Unit 与 UI target；硬件矩阵仍需单独执行。
+第二条命令必须在完整 Xcode、开发签名配置妥当后运行。`ONLY_ACTIVE_ARCH=YES` 仅用于开发机的 Debug 测试，避免本机双架构并行构建与本地 Swift Package 的模块产物发生竞态；Release 仍应在 P4 分别验证 arm64 与 x86_64。它会覆盖 Unit 与 UI target；硬件矩阵仍需单独执行。

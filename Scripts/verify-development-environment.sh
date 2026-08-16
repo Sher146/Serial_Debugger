@@ -29,6 +29,7 @@ print -- "验证 Debug 无签名构建…"
   -scheme "$scheme" \
   -configuration Debug \
   -destination 'platform=macOS' \
+  ONLY_ACTIVE_ARCH=YES \
   CODE_SIGNING_ALLOWED=NO \
   build
 
