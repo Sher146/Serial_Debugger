@@ -1,0 +1,3 @@
+module SerialCorePackageTests {
+    header "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCorePackageTests.build/include/SerialCorePackageTests-Swift.h"
+}

@@ -1,0 +1,19 @@
+{
+  "": {
+    "swift-dependencies": "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCoreTests.build/primary.swiftdeps"
+  },
+  "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/Tests/SerialCoreTests/SerialConfigurationTests.swift": {
+    "dependencies": "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCoreTests.build/SerialConfigurationTests.d",
+    "object": "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCoreTests.build/SerialConfigurationTests.swift.o",
+    "swiftmodule": "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCoreTests.build/SerialConfigurationTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCoreTests.build/SerialConfigurationTests.swiftdeps",
+    "diagnostics": "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCoreTests.build/SerialConfigurationTests.dia"
+  },
+  "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/Tests/SerialCoreTests/SerialErrorTests.swift": {
+    "dependencies": "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCoreTests.build/SerialErrorTests.d",
+    "object": "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCoreTests.build/SerialErrorTests.swift.o",
+    "swiftmodule": "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCoreTests.build/SerialErrorTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCoreTests.build/SerialErrorTests.swiftdeps",
+    "diagnostics": "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCoreTests.build/SerialErrorTests.dia"
+  }
+}

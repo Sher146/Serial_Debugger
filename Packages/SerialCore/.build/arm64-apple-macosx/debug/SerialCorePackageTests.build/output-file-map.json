@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCorePackageTests.build/primary.swiftdeps"
+  },
+  "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCorePackageTests.derived/runner.swift": {
+    "dependencies": "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCorePackageTests.build/runner.d",
+    "object": "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCorePackageTests.build/runner.swift.o",
+    "swiftmodule": "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCorePackageTests.build/runner~partial.swiftmodule",
+    "swift-dependencies": "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCorePackageTests.build/runner.swiftdeps",
+    "diagnostics": "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCorePackageTests.build/runner.dia"
+  }
+}

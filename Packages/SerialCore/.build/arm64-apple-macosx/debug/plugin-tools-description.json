@@ -1,0 +1,661 @@
+{
+  "builtTestProducts" : [
+    {
+      "binaryPath" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCorePackageTests.xctest/Contents/MacOS/SerialCorePackageTests",
+      "packagePath" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore",
+      "productName" : "SerialCorePackageTests"
+    }
+  ],
+  "copyCommands" : {
+
+  },
+  "explicitTargetDependencyImportCheckingMode" : {
+    "none" : {
+
+    }
+  },
+  "generatedSourceTargetSet" : [
+
+  ],
+  "pluginDescriptions" : [
+
+  ],
+  "swiftCommands" : {
+    "C.SerialCore-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCore.build/sources",
+      "importPath" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/Sources/SerialCore/SerialConfiguration.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/Sources/SerialCore/SerialConnectionEvent.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/Sources/SerialCore/SerialError.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/Sources/SerialCore/SerialPortDescriptor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/Sources/SerialCore/SerialPorting.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCore.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "SerialCore",
+      "moduleOutputPath" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/Modules/SerialCore.swiftmodule",
+      "objects" : [
+        "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCore.build/SerialConfiguration.swift.o",
+        "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCore.build/SerialConnectionEvent.swift.o",
+        "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCore.build/SerialError.swift.o",
+        "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCore.build/SerialPortDescriptor.swift.o",
+        "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCore.build/SerialPorting.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j8",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCore.build/include/SerialCore-Swift.h",
+        "-swift-version",
+        "6",
+        "-I",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-L",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-plugin-path",
+        "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "serialcore"
+      ],
+      "outputFileMapPath" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCore.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCore.build/SerialConfiguration.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCore.build/SerialConnectionEvent.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCore.build/SerialError.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCore.build/SerialPortDescriptor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCore.build/SerialPorting.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/Modules/SerialCore.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/Sources/SerialCore/SerialConfiguration.swift",
+        "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/Sources/SerialCore/SerialConnectionEvent.swift",
+        "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/Sources/SerialCore/SerialError.swift",
+        "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/Sources/SerialCore/SerialPortDescriptor.swift",
+        "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/Sources/SerialCore/SerialPorting.swift"
+      ],
+      "tempsPath" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCore.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.SerialCorePackageTests-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCorePackageTests.build/sources",
+      "importPath" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCorePackageTests.derived/runner.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/Modules/SerialCoreTests.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCorePackageTests.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "SerialCorePackageTests",
+      "moduleOutputPath" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/Modules/SerialCorePackageTests.swiftmodule",
+      "objects" : [
+        "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCorePackageTests.build/runner.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-Xfrontend",
+        "-enable-cross-import-overlays",
+        "-j8",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCorePackageTests.build/include/SerialCorePackageTests-Swift.h",
+        "-I",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-L",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-plugin-path",
+        "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "serialcore"
+      ],
+      "outputFileMapPath" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCorePackageTests.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCorePackageTests.build/runner.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/Modules/SerialCorePackageTests.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCorePackageTests.derived/runner.swift"
+      ],
+      "tempsPath" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCorePackageTests.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.SerialCoreTests-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCoreTests.build/sources",
+      "importPath" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/Tests/SerialCoreTests/SerialConfigurationTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/Tests/SerialCoreTests/SerialErrorTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/Modules/SerialCore.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCoreTests.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "SerialCoreTests",
+      "moduleOutputPath" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/Modules/SerialCoreTests.swiftmodule",
+      "objects" : [
+        "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCoreTests.build/SerialConfigurationTests.swift.o",
+        "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCoreTests.build/SerialErrorTests.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-Xfrontend",
+        "-enable-cross-import-overlays",
+        "-j8",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-swift-version",
+        "6",
+        "-I",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-L",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-plugin-path",
+        "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "serialcore"
+      ],
+      "outputFileMapPath" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCoreTests.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCoreTests.build/SerialConfigurationTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCoreTests.build/SerialErrorTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/Modules/SerialCoreTests.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/Tests/SerialCoreTests/SerialConfigurationTests.swift",
+        "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/Tests/SerialCoreTests/SerialErrorTests.swift"
+      ],
+      "tempsPath" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCoreTests.build",
+      "wholeModuleOptimization" : false
+    }
+  },
+  "swiftFrontendCommands" : {
+
+  },
+  "swiftTargetScanArgs" : {
+    "SerialCore" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "SerialCore",
+      "-package-name",
+      "serialcore",
+      "-c",
+      "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/Sources/SerialCore/SerialConfiguration.swift",
+      "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/Sources/SerialCore/SerialConnectionEvent.swift",
+      "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/Sources/SerialCore/SerialError.swift",
+      "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/Sources/SerialCore/SerialPortDescriptor.swift",
+      "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/Sources/SerialCore/SerialPorting.swift",
+      "-I",
+      "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j8",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCore.build/include/SerialCore-Swift.h",
+      "-swift-version",
+      "6",
+      "-I",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-L",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-plugin-path",
+      "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "serialcore",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ],
+    "SerialCorePackageTests" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "SerialCorePackageTests",
+      "-package-name",
+      "serialcore",
+      "-c",
+      "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCorePackageTests.derived/runner.swift",
+      "-I",
+      "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-Xfrontend",
+      "-enable-cross-import-overlays",
+      "-j8",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCorePackageTests.build/include/SerialCorePackageTests-Swift.h",
+      "-I",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-L",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-plugin-path",
+      "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "serialcore",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ],
+    "SerialCoreTests" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "SerialCoreTests",
+      "-package-name",
+      "serialcore",
+      "-c",
+      "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/Tests/SerialCoreTests/SerialConfigurationTests.swift",
+      "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/Tests/SerialCoreTests/SerialErrorTests.swift",
+      "-I",
+      "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-Xfrontend",
+      "-enable-cross-import-overlays",
+      "-j8",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-swift-version",
+      "6",
+      "-I",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-L",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-plugin-path",
+      "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "serialcore",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ]
+  },
+  "targetDependencyMap" : {
+    "SerialCore" : [
+
+    ],
+    "SerialCorePackageTests" : [
+      "SerialCoreTests",
+      "SerialCore"
+    ],
+    "SerialCoreTests" : [
+      "SerialCore"
+    ]
+  },
+  "testDiscoveryCommands" : {
+
+  },
+  "testEntryPointCommands" : {
+    "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCorePackageTests.derived/runner.swift" : {
+      "inputs" : [
+
+      ],
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCorePackageTests.derived/runner.swift"
+        }
+      ]
+    }
+  },
+  "traitConfiguration" : {
+    "default" : {
+
+    }
+  },
+  "writeCommands" : {
+    "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCore.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/Sources/SerialCore/SerialConfiguration.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/Sources/SerialCore/SerialConnectionEvent.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/Sources/SerialCore/SerialError.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/Sources/SerialCore/SerialPortDescriptor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/Sources/SerialCore/SerialPorting.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCore.build/sources"
+    },
+    "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCorePackageTests.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCorePackageTests.derived/runner.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCorePackageTests.build/sources"
+    },
+    "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCorePackageTests.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCore.build/SerialConfiguration.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCore.build/SerialConnectionEvent.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCore.build/SerialError.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCore.build/SerialPortDescriptor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCore.build/SerialPorting.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCorePackageTests.build/runner.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCoreTests.build/SerialConfigurationTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCoreTests.build/SerialErrorTests.swift.o"
+        }
+      ],
+      "outputFilePath" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCorePackageTests.product/Objects.LinkFileList"
+    },
+    "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCoreTests.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/Tests/SerialCoreTests/SerialConfigurationTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/Tests/SerialCoreTests/SerialErrorTests.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/SerialCoreTests.build/sources"
+    },
+    "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt" : {
+      "alwaysOutOfDate" : true,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<swift-get-version>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+        }
+      ],
+      "outputFilePath" : "/Users/lucas_wang/Work/Serial_Debugger/Packages/SerialCore/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+    }
+  }
+}

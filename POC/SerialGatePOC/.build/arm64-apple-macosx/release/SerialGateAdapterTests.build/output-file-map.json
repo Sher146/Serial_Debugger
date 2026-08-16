@@ -1,0 +1,25 @@
+{
+  "": {
+    "dependencies": "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/.build/arm64-apple-macosx/release/SerialGateAdapterTests.build/SerialGateAdapterTests.d",
+    "object": "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/.build/arm64-apple-macosx/release/SerialGateAdapterTests.build/SerialGateAdapterTests.o",
+    "swift-dependencies": "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/.build/arm64-apple-macosx/release/SerialGateAdapterTests.build/primary.swiftdeps"
+  },
+  "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/Tests/SerialGateAdapterTests/ErrorMapperTests.swift": {
+    "object": "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/.build/arm64-apple-macosx/release/SerialGateAdapterTests.build/ErrorMapperTests.swift.o",
+    "swiftmodule": "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/.build/arm64-apple-macosx/release/SerialGateAdapterTests.build/ErrorMapperTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/.build/arm64-apple-macosx/release/SerialGateAdapterTests.build/ErrorMapperTests.swiftdeps",
+    "diagnostics": "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/.build/arm64-apple-macosx/release/SerialGateAdapterTests.build/ErrorMapperTests.dia"
+  },
+  "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/Tests/SerialGateAdapterTests/Helpers/PseudoTerminal.swift": {
+    "object": "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/.build/arm64-apple-macosx/release/SerialGateAdapterTests.build/PseudoTerminal.swift.o",
+    "swiftmodule": "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/.build/arm64-apple-macosx/release/SerialGateAdapterTests.build/PseudoTerminal~partial.swiftmodule",
+    "swift-dependencies": "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/.build/arm64-apple-macosx/release/SerialGateAdapterTests.build/PseudoTerminal.swiftdeps",
+    "diagnostics": "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/.build/arm64-apple-macosx/release/SerialGateAdapterTests.build/PseudoTerminal.dia"
+  },
+  "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/Tests/SerialGateAdapterTests/SerialGateAdapterPTYTests.swift": {
+    "object": "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/.build/arm64-apple-macosx/release/SerialGateAdapterTests.build/SerialGateAdapterPTYTests.swift.o",
+    "swiftmodule": "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/.build/arm64-apple-macosx/release/SerialGateAdapterTests.build/SerialGateAdapterPTYTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/.build/arm64-apple-macosx/release/SerialGateAdapterTests.build/SerialGateAdapterPTYTests.swiftdeps",
+    "diagnostics": "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/.build/arm64-apple-macosx/release/SerialGateAdapterTests.build/SerialGateAdapterPTYTests.dia"
+  }
+}

@@ -340,7 +340,7 @@ extension SerialError {
                                systemDomain: domain,
                                userMessage: "\(operation) failed: port \(path) does not exist (\(message))",
                                occurredAt: occurredAt, isRetryable: false)
-        case EBUSY, EACCES where code == EBUSY:
+        case EBUSY:
             return SerialError(category: .portBusy, systemCode: Int(code),
                                systemDomain: domain,
                                userMessage: "\(operation) failed: port \(path) is busy (\(message))",
@@ -377,7 +377,7 @@ extension SerialError {
 }
 ```
 
-> 说明：`mapErrno` 中 `case EBUSY, EACCES where code == EBUSY:` 的写法用于规避 macOS 上 `EACCES == EBUSY` 恒不成立的歧义编译告警；若编译器报重复 case，保留 `case EBUSY:` 单独分支并删除带 where 的分支，同时回写本文档。
+> 说明：原文档写作 `case EBUSY, EACCES where code == EBUSY:`，Swift 6 编译器对其报 "'where' only applies to the second pattern match" 警告（非重复 case 错误）；按本节原定指示做最小调整，保留 `case EBUSY:` 单独分支，EACCES 仍由下方 `case EPERM, EACCES:` 映射为 permissionDenied。已于 P0 步骤 1 回写本代码块。
 
 ### 6.6 适配器实现要点（SerialGateAdapter，非契约，属 POC 工作产物）
 

@@ -1,0 +1,19 @@
+{
+  "": {
+    "swift-dependencies": "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/.build/arm64-apple-macosx/debug/SerialGateAdapter.build/primary.swiftdeps"
+  },
+  "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/Sources/SerialGateAdapter/SerialGateAdapter.swift": {
+    "dependencies": "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/.build/arm64-apple-macosx/debug/SerialGateAdapter.build/SerialGateAdapter.d",
+    "object": "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/.build/arm64-apple-macosx/debug/SerialGateAdapter.build/SerialGateAdapter.swift.o",
+    "swiftmodule": "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/.build/arm64-apple-macosx/debug/SerialGateAdapter.build/SerialGateAdapter~partial.swiftmodule",
+    "swift-dependencies": "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/.build/arm64-apple-macosx/debug/SerialGateAdapter.build/SerialGateAdapter.swiftdeps",
+    "diagnostics": "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/.build/arm64-apple-macosx/debug/SerialGateAdapter.build/SerialGateAdapter.dia"
+  },
+  "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/Sources/SerialGateAdapter/SerialGateErrorMapper.swift": {
+    "dependencies": "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/.build/arm64-apple-macosx/debug/SerialGateAdapter.build/SerialGateErrorMapper.d",
+    "object": "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/.build/arm64-apple-macosx/debug/SerialGateAdapter.build/SerialGateErrorMapper.swift.o",
+    "swiftmodule": "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/.build/arm64-apple-macosx/debug/SerialGateAdapter.build/SerialGateErrorMapper~partial.swiftmodule",
+    "swift-dependencies": "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/.build/arm64-apple-macosx/debug/SerialGateAdapter.build/SerialGateErrorMapper.swiftdeps",
+    "diagnostics": "/Users/lucas_wang/Work/Serial_Debugger/POC/SerialGatePOC/.build/arm64-apple-macosx/debug/SerialGateAdapter.build/SerialGateErrorMapper.dia"
+  }
+}
