@@ -32,6 +32,7 @@
 		B00000000000000000000007 /* WindowConfigurationBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000017 /* WindowConfigurationBridge.swift */; };
 		B00000000000000000000008 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000018 /* Localizable.xcstrings */; };
 		B00000000000000000000009 /* SessionViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000019 /* SessionViewModelTests.swift */; };
+		B0000000000000000000000A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000001A /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -79,6 +80,7 @@
 		B00000000000000000000017 /* WindowConfigurationBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowConfigurationBridge.swift; sourceTree = "<group>"; };
 		B00000000000000000000018 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		B00000000000000000000019 /* SessionViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionViewModelTests.swift; sourceTree = "<group>"; };
+		B0000000000000000000001A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -150,6 +152,7 @@
 				A00000000000000000000024 /* Tests/UITests */,
 				B00000000000000000000018 /* Localizable.xcstrings */,
 				A00000000000000000000019 /* SerialMonitor.entitlements */,
+				B0000000000000000000001A /* Assets.xcassets */,
 			);
 			path = SerialMonitor;
 			sourceTree = "<group>";
@@ -357,6 +360,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B00000000000000000000008 /* Localizable.xcstrings in Resources */,
+				B0000000000000000000000A /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -446,6 +450,7 @@
 		A00000000000000000000111 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = SerialMonitor/SerialMonitor.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				ENABLE_TESTABILITY = YES;
@@ -467,6 +472,7 @@
 		A00000000000000000000112 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = SerialMonitor/SerialMonitor.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = YES;

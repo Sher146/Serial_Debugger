@@ -1,3 +1,5 @@
+![Serial Monitor Logo](SerialMonitor/image.svg)
+
 # Serial Monitor
 
 面向 macOS 的单窗口串口监视与调试工具。当前开发版本支持发现串口、配置通信参数、连接/断开、接收原始字节、以 ASCII 或 HEX 查看记录，以及手动发送数据。
