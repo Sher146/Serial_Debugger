@@ -12,6 +12,15 @@
 		A00000000000000000000005 /* POSIXSerialPortAdapterPTYTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000014 /* POSIXSerialPortAdapterPTYTests.swift */; };
 		A00000000000000000000006 /* SerialCore in Frameworks */ = {isa = PBXBuildFile; productRef = A00000000000000000000032 /* SerialCore */; };
 		A00000000000000000000007 /* SerialMonitorUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000015 /* SerialMonitorUITests.swift */; };
+		A00000000000000000000008 /* SessionDomain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000001A /* SessionDomain.swift */; };
+		A00000000000000000000009 /* SessionEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000001B /* SessionEvent.swift */; };
+		A0000000000000000000000A /* SessionClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000001C /* SessionClient.swift */; };
+		A0000000000000000000000B /* LogServicing.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000001D /* LogServicing.swift */; };
+		A0000000000000000000000C /* TXSendQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000001E /* TXSendQueue.swift */; };
+		A0000000000000000000000D /* SessionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000001F /* SessionCoordinator.swift */; };
+		A0000000000000000000000E /* SessionDomainTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000020 /* SessionDomainTests.swift */; };
+		A0000000000000000000000F /* MockSerialPort.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000030 /* MockSerialPort.swift */; };
+		A00000000000000000000010 /* SessionCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000003A /* SessionCoordinatorTests.swift */; };
 
 		A00000000000000000000011 /* SerialMonitorApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SerialMonitorApp.swift; sourceTree = "<group>"; };
 		A00000000000000000000012 /* POSIXSerialPortAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = POSIXSerialPortAdapter.swift; sourceTree = "<group>"; };
@@ -22,19 +31,32 @@
 		A00000000000000000000017 /* SerialMonitorTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SerialMonitorTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A00000000000000000000018 /* SerialMonitorUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SerialMonitorUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A00000000000000000000019 /* SerialMonitor.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SerialMonitor.entitlements; sourceTree = "<group>"; };
+		A0000000000000000000001A /* SessionDomain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionDomain.swift; sourceTree = "<group>"; };
+		A0000000000000000000001B /* SessionEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionEvent.swift; sourceTree = "<group>"; };
+		A0000000000000000000001C /* SessionClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionClient.swift; sourceTree = "<group>"; };
+		A0000000000000000000001D /* LogServicing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogServicing.swift; sourceTree = "<group>"; };
+		A0000000000000000000001E /* TXSendQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TXSendQueue.swift; sourceTree = "<group>"; };
+		A0000000000000000000001F /* SessionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionCoordinator.swift; sourceTree = "<group>"; };
+		A00000000000000000000020 /* SessionDomainTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionDomainTests.swift; sourceTree = "<group>"; };
+		A00000000000000000000030 /* MockSerialPort.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockSerialPort.swift; sourceTree = "<group>"; };
+		A0000000000000000000003A /* SessionCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionCoordinatorTests.swift; sourceTree = "<group>"; };
 
 		A00000000000000000000021 /* App */ = {isa = PBXGroup; children = (A00000000000000000000011 /* SerialMonitorApp.swift */,); path = App; sourceTree = "<group>"; };
 		A00000000000000000000022 /* Infrastructure */ = {isa = PBXGroup; children = (A00000000000000000000012 /* POSIXSerialPortAdapter.swift */,); path = "Infrastructure/Serial"; sourceTree = "<group>"; };
 		A00000000000000000000023 /* Serial Tests */ = {isa = PBXGroup; children = (A00000000000000000000013 /* PseudoTerminal.swift */, A00000000000000000000014 /* POSIXSerialPortAdapterPTYTests.swift */); path = "Tests/Serial"; sourceTree = "<group>"; };
 		A00000000000000000000024 /* UI Tests */ = {isa = PBXGroup; children = (A00000000000000000000015 /* SerialMonitorUITests.swift */,); path = "Tests/UITests"; sourceTree = "<group>"; };
 		A00000000000000000000025 /* SerialMonitor */ = {isa = PBXGroup; children = (A00000000000000000000021 /* App */, A00000000000000000000022 /* Infrastructure */, A00000000000000000000023 /* Serial Tests */, A00000000000000000000024 /* UI Tests */, A00000000000000000000019 /* SerialMonitor.entitlements */); path = SerialMonitor; sourceTree = "<group>"; };
+		A00000000000000000000028 /* Domain */ = {isa = PBXGroup; children = (A0000000000000000000001A /* SessionDomain.swift */); path = "SerialMonitor/Domain"; sourceTree = "<group>"; };
+		A00000000000000000000029 /* Application */ = {isa = PBXGroup; children = (A0000000000000000000001B /* SessionEvent.swift */, A0000000000000000000001C /* SessionClient.swift */, A0000000000000000000001D /* LogServicing.swift */, A0000000000000000000001E /* TXSendQueue.swift */, A0000000000000000000001F /* SessionCoordinator.swift */); path = "SerialMonitor/Application"; sourceTree = "<group>"; };
+		A0000000000000000000002A /* Domain Tests */ = {isa = PBXGroup; children = (A00000000000000000000020 /* SessionDomainTests.swift */); path = "SerialMonitor/Tests/Domain"; sourceTree = "<group>"; };
+		A0000000000000000000002B /* Application Tests */ = {isa = PBXGroup; children = (A00000000000000000000030 /* MockSerialPort.swift */, A0000000000000000000003A /* SessionCoordinatorTests.swift */); path = "SerialMonitor/Tests/Application"; sourceTree = "<group>"; };
 		A00000000000000000000026 /* Products */ = {isa = PBXGroup; children = (A00000000000000000000016 /* SerialMonitor.app */, A00000000000000000000017 /* SerialMonitorTests.xctest */, A00000000000000000000018 /* SerialMonitorUITests.xctest */); name = Products; sourceTree = "<group>"; };
-		A00000000000000000000027 = {isa = PBXGroup; children = (A00000000000000000000025 /* SerialMonitor */, A00000000000000000000026 /* Products */); sourceTree = "<group>"; };
+		A00000000000000000000027 = {isa = PBXGroup; children = (A00000000000000000000025 /* SerialMonitor */, A00000000000000000000028 /* Domain */, A00000000000000000000029 /* Application */, A0000000000000000000002A /* Domain Tests */, A0000000000000000000002B /* Application Tests */, A00000000000000000000026 /* Products */); sourceTree = "<group>"; };
 
 		A00000000000000000000041 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (A00000000000000000000003 /* SerialCore in Frameworks */); runOnlyForDeploymentPostprocessing = 0; };
-		A00000000000000000000042 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A00000000000000000000001 /* SerialMonitorApp.swift in Sources */, A00000000000000000000002 /* POSIXSerialPortAdapter.swift in Sources */); runOnlyForDeploymentPostprocessing = 0; };
+		A00000000000000000000042 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A00000000000000000000001 /* SerialMonitorApp.swift in Sources */, A00000000000000000000002 /* POSIXSerialPortAdapter.swift in Sources */, A00000000000000000000008 /* SessionDomain.swift in Sources */, A00000000000000000000009 /* SessionEvent.swift in Sources */, A0000000000000000000000A /* SessionClient.swift in Sources */, A0000000000000000000000B /* LogServicing.swift in Sources */, A0000000000000000000000C /* TXSendQueue.swift in Sources */, A0000000000000000000000D /* SessionCoordinator.swift in Sources */); runOnlyForDeploymentPostprocessing = 0; };
 		A00000000000000000000043 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (A00000000000000000000006 /* SerialCore in Frameworks */); runOnlyForDeploymentPostprocessing = 0; };
-		A00000000000000000000044 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A00000000000000000000004 /* PseudoTerminal.swift in Sources */, A00000000000000000000005 /* POSIXSerialPortAdapterPTYTests.swift in Sources */); runOnlyForDeploymentPostprocessing = 0; };
+		A00000000000000000000044 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A00000000000000000000004 /* PseudoTerminal.swift in Sources */, A00000000000000000000005 /* POSIXSerialPortAdapterPTYTests.swift in Sources */, A0000000000000000000000E /* SessionDomainTests.swift in Sources */, A0000000000000000000000F /* MockSerialPort.swift in Sources */, A00000000000000000000010 /* SessionCoordinatorTests.swift in Sources */); runOnlyForDeploymentPostprocessing = 0; };
 		A00000000000000000000045 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 		A00000000000000000000046 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A00000000000000000000007 /* SerialMonitorUITests.swift in Sources */); runOnlyForDeploymentPostprocessing = 0; };
 
