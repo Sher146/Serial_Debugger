@@ -1,0 +1,43 @@
+# 开发环境
+
+本项目以 macOS 14+ 为最低运行版本，并以 macOS 26 的 Liquid Glass 视觉为优先验收目标。开发机必须使用包含 macOS 26 SDK 的完整 Xcode；Command Line Tools 不能构建、运行或测试该 App。
+
+## 当前状态（2026-08-16）
+
+当前开发机为 Apple Silicon、macOS 26.6.1，已安装 Swift 6.3.3 Command Line Tools，但未安装完整 Xcode：`xcodebuild`、XCTest 和 `simctl` 均不可用，也没有可用代码签名身份。本文件将这项状态明确记录为环境未就绪，不改变 P0 的“未决”结论。
+
+## 一次性安装
+
+1. 从 App Store 或 Apple Developer 下载并安装与 macOS 26 SDK 匹配的完整 Xcode，建议保留在 `/Applications/Xcode.app`。
+2. 首次启动 Xcode，登录 Apple ID 并接受许可；随后在终端执行：
+
+   ```zsh
+   sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+   sudo xcodebuild -runFirstLaunch
+   sudo xcodebuild -license accept
+   ```
+
+3. 在 Xcode 的 **Settings → Accounts** 登录用于开发的 Apple ID。仅在执行 P0 的沙盒签名验证时，启用 Xcode managed signing；不要把 Team ID 或证书写入仓库。
+4. 运行仓库检查：
+
+   ```zsh
+   zsh Scripts/verify-development-environment.sh
+   ```
+
+该脚本会解析本地 `SerialCore` 包，并执行无签名 Debug 构建。无签名构建只用于工程和并发检查，不可代替沙盒、串口权限、签名或公证验证。
+
+## 环境边界
+
+- 不安装第三方串口库；P0 当前基线为系统 POSIX/termios，实现选择仍待 PTY 与实机证据决定。
+- macOS App 不需要 iOS 模拟器；`simctl` 仅作为完整 Xcode 安装完整性的检查项。
+- CH340、CP210x、回环线及实机拔出测试暂不执行。设备到位后按 [SerialCompatibilityMatrix.md](SerialCompatibilityMatrix.md) 填写矩阵。
+- Developer ID、App Store Connect 凭据和公证凭据仅在 P4 配置；不得保存在仓库、脚本或 CI 日志。
+
+## 日常命令
+
+```zsh
+zsh Scripts/verify-development-environment.sh
+xcodebuild -project SerialMonitor.xcodeproj -scheme SerialMonitor -destination 'platform=macOS' test
+```
+
+第二条命令必须在完整 Xcode、开发签名配置妥当后运行。它会覆盖 Unit 与 UI target；硬件矩阵仍需单独执行。
