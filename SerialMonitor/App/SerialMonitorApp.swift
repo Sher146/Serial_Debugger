@@ -1,14 +1,19 @@
 import SwiftUI
+import SerialCore
 
 @main
 struct SerialMonitorApp: App {
+    private let coordinator = SessionCoordinator(serialPort: POSIXSerialPortAdapter())
+    private let uiTestClient = SessionPreviewClient(state: .connected(SerialConfiguration(path: "/dev/cu.ui-test")))
+
     var body: some Scene {
-        WindowGroup("Serial Monitor") {
-            ContentUnavailableView(
-                "Serial Monitor",
-                systemImage: "cable.connector",
-                description: Text("P0 基础设施验证中")
-            )
+        WindowGroup(L10n.appName) {
+            SessionView(client: isRunningUITests ? uiTestClient : coordinator)
         }
+        .defaultSize(width: 1_180, height: 760)
+    }
+
+    private var isRunningUITests: Bool {
+        ProcessInfo.processInfo.arguments.contains("-ui-testing-connected")
     }
 }
