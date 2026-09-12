@@ -67,7 +67,7 @@ enum SessionUITestScenario: String, Sendable {
 actor SessionScenarioClient: SessionClient {
     private let scenario: SessionUITestScenario
     private let eventHub = SessionEventHub()
-    private let ports = [SerialPortDescriptor(path: "/dev/cu.ui-test", displayName: "UI Test Port")]
+    private let ports = [SerialPortDescriptor(path: "/dev/cu.ui-test", displayName: "cu.Bluetooth-Incoming-Port")]
     private var state: SessionState = .disconnected
     private var records: [CommunicationRecord] = []
     private var receivedByteCount = 0

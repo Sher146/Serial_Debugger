@@ -37,8 +37,33 @@ final class SerialMonitorUITests: XCTestCase {
 
     func testMainWindowRespectsMinimumSize() {
         let app = launch(scenario: "echo")
-        XCTAssertGreaterThanOrEqual(app.windows.firstMatch.frame.width, 980)
+        XCTAssertGreaterThanOrEqual(app.windows.firstMatch.frame.width, 1_120)
         XCTAssertGreaterThanOrEqual(app.windows.firstMatch.frame.height, 680)
+    }
+
+    func testToolbarProvidesWidePortPickerAndLargeIconTargets() {
+        let app = launch(scenario: "echo")
+        let portPicker = element(app, "session.port-picker")
+        XCTAssertTrue(portPicker.waitForExistence(timeout: 5))
+        XCTAssertEqual(portPicker.value as? String, "cu.Bluetooth-Incoming-Port")
+
+        for identifier in ["session.refresh", "session.parameters", "session.presets-toggle", "log.toggle"] {
+            let button = app.buttons[identifier]
+            XCTAssertTrue(button.exists, "Missing toolbar button \(identifier)")
+            XCTAssertGreaterThanOrEqual(button.frame.width, 32, "Toolbar button \(identifier) is too narrow")
+            XCTAssertGreaterThanOrEqual(button.frame.height, 32, "Toolbar button \(identifier) is too short")
+        }
+    }
+
+    func testToolbarSelectsHighSpeedBaudRate() {
+        let app = launch(scenario: "echo")
+        let baudRate = element(app, "session.baud-rate")
+        XCTAssertTrue(baudRate.waitForExistence(timeout: 5))
+        baudRate.click()
+        let highSpeedRate = app.menuItems["921,600"]
+        XCTAssertTrue(highSpeedRate.waitForExistence(timeout: 2))
+        highSpeedRate.click()
+        XCTAssertTrue(waitForValue(baudRate, "921,600"))
     }
 
     private func launch(scenario: String) -> XCUIApplication {

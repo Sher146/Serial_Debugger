@@ -2,6 +2,24 @@ import Darwin
 import Foundation
 import SerialCore
 
+typealias CustomBaudRateSetter = @Sendable (Int32, UInt64) -> Int32
+
+@_silgen_name("serial_monitor_set_custom_baud_rate")
+private func serialMonitorSetCustomBaudRate(_ fileDescriptor: Int32, _ baudRate: UInt64) -> Int32
+
+enum POSIXBaudRatePlan: Equatable {
+    case standard
+    case custom(UInt64)
+
+    static func make(for baudRate: Int) -> Self? {
+        guard baudRate > 0 else { return nil }
+        if BaudRateCatalog.isStandard(baudRate) {
+            return .standard
+        }
+        return .custom(UInt64(baudRate))
+    }
+}
+
 /// 基于 POSIX/termios 的 P0 实现。它不依赖第三方库，生产采用与否由 P0 实机矩阵决定。
 public actor POSIXSerialPortAdapter: SerialPorting {
     private let clock = ContinuousClock()
@@ -12,8 +30,15 @@ public actor POSIXSerialPortAdapter: SerialPorting {
     private var eventContinuation: AsyncStream<SerialConnectionEvent>.Continuation?
     private var eventStream: AsyncStream<SerialConnectionEvent>?
     private var readerTask: Task<Void, Never>?
+    private let setCustomBaudRate: CustomBaudRateSetter
 
-    public init() {}
+    public init() {
+        setCustomBaudRate = serialMonitorSetCustomBaudRate
+    }
+
+    init(setCustomBaudRate: @escaping CustomBaudRateSetter) {
+        self.setCustomBaudRate = setCustomBaudRate
+    }
 
     deinit {
         readerTask?.cancel()
@@ -159,7 +184,8 @@ public actor POSIXSerialPortAdapter: SerialPorting {
     }
 
     private func configure(_ descriptor: Int32, with configuration: SerialConfiguration) throws {
-        guard let speed = baudRate(configuration.baudRate) else {
+        guard let baudRatePlan = POSIXBaudRatePlan.make(for: configuration.baudRate),
+              let speed = termiosBaudRate(configuration.baudRate, plan: baudRatePlan) else {
             throw SerialError(category: .configurationUnsupported, operation: "configure", path: configuration.path, message: "Unsupported baud rate \(configuration.baudRate)")
         }
 
@@ -196,6 +222,15 @@ public actor POSIXSerialPortAdapter: SerialPorting {
         guard cfsetispeed(&options, speed) == 0, cfsetospeed(&options, speed) == 0, tcsetattr(descriptor, TCSANOW, &options) == 0 else {
             throw SerialError.fromErrno(errno, operation: "configure", path: configuration.path)
         }
+
+        if case .custom(let baudRate) = baudRatePlan, setCustomBaudRate(descriptor, baudRate) != 0 {
+            throw SerialError(
+                category: .configurationUnsupported,
+                operation: "configure",
+                path: configuration.path,
+                message: "当前串口驱动不支持 \(BaudRateCatalog.label(for: configuration.baudRate)) bps"
+            )
+        }
     }
 
     private func dataBitsFlag(_ value: SerialConfiguration.DataBits) -> tcflag_t {
@@ -207,17 +242,34 @@ public actor POSIXSerialPortAdapter: SerialPorting {
         }
     }
 
-    private func baudRate(_ value: Int) -> speed_t? {
+    private func termiosBaudRate(_ value: Int, plan: POSIXBaudRatePlan) -> speed_t? {
+        if case .custom = plan {
+            // A baseline speed is required before IOSSIOSPEED applies the final
+            // arbitrary rate. Failure is surfaced instead of retaining B9600.
+            return speed_t(B9600)
+        }
+
         switch value {
+        case 50: return speed_t(B50)
+        case 75: return speed_t(B75)
+        case 110: return speed_t(B110)
+        case 134: return speed_t(B134)
+        case 150: return speed_t(B150)
+        case 200: return speed_t(B200)
         case 300: return speed_t(B300)
         case 600: return speed_t(B600)
         case 1_200: return speed_t(B1200)
+        case 1_800: return speed_t(B1800)
         case 2_400: return speed_t(B2400)
         case 4_800: return speed_t(B4800)
+        case 7_200: return speed_t(B7200)
         case 9_600: return speed_t(B9600)
+        case 14_400: return speed_t(B14400)
         case 19_200: return speed_t(B19200)
+        case 28_800: return speed_t(B28800)
         case 38_400: return speed_t(B38400)
         case 57_600: return speed_t(B57600)
+        case 76_800: return speed_t(B76800)
         case 115_200: return speed_t(B115200)
         case 230_400: return speed_t(B230400)
         default: return nil

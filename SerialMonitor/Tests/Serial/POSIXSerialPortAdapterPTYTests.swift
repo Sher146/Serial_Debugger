@@ -7,6 +7,45 @@ import XCTest
 /// Xcode test target 启用后，将本文件与 Infrastructure target 链接以验证：
 /// 打开/配置、双向读写、占用、拔出事件顺序、重复 close、连接中取消与写 deadline。
 final class POSIXSerialPortAdapterPTYTests: XCTestCase {
+    func testBaudRatePlanUsesTermiosForStandardRatesAndIOSSIOSPEEDForCustomRates() {
+        XCTAssertEqual(POSIXBaudRatePlan.make(for: 50), .standard)
+        XCTAssertEqual(POSIXBaudRatePlan.make(for: 230_400), .standard)
+        XCTAssertEqual(POSIXBaudRatePlan.make(for: 921_600), .custom(921_600))
+        XCTAssertEqual(POSIXBaudRatePlan.make(for: 250_000), .custom(250_000))
+        XCTAssertNil(POSIXBaudRatePlan.make(for: 0))
+    }
+
+    func testCustomBaudRateUsesInjectedIOSSIOSPEEDSetter() async throws {
+        let terminal = try PseudoTerminal()
+        let adapter = POSIXSerialPortAdapter(setCustomBaudRate: { _, baudRate in
+            baudRate == 921_600 ? 0 : -1
+        })
+        defer {
+            terminal.closeMaster()
+            terminal.closeSlave()
+        }
+
+        try await adapter.open(configuration: SerialConfiguration(path: terminal.slavePath, baudRate: 921_600))
+        await adapter.close()
+    }
+
+    func testCustomBaudRateDriverRejectionIsConfigurationError() async throws {
+        let terminal = try PseudoTerminal()
+        let adapter = POSIXSerialPortAdapter(setCustomBaudRate: { _, _ in -1 })
+        defer {
+            terminal.closeMaster()
+            terminal.closeSlave()
+        }
+
+        do {
+            try await adapter.open(configuration: SerialConfiguration(path: terminal.slavePath, baudRate: 921_600))
+            XCTFail("Expected custom baud rate to be rejected")
+        } catch let error as SerialError {
+            XCTAssertEqual(error.category, .configurationUnsupported)
+            XCTAssertTrue(error.message.contains("921,600 bps"))
+        }
+    }
+
     func testPTYFixtureProvidesSlavePath() throws {
         let terminal = try PseudoTerminal()
         defer { terminal.closeMaster(); terminal.closeSlave() }

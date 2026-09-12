@@ -7,6 +7,8 @@ enum DesignTokens {
     static let controlCornerRadius: CGFloat = 8
     static let containerCornerRadius: CGFloat = 12
     static let panelCornerRadius: CGFloat = 16
+    static let toolbarPortPickerWidth: CGFloat = 360
+    static let toolbarIconTargetSize: CGFloat = 32
     static let consoleFont = Font.system(size: 12, weight: .regular, design: .monospaced)
     static let statusFont = Font.system(size: 12, weight: .medium)
 }

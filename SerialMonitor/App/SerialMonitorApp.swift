@@ -28,8 +28,8 @@ struct SerialMonitorApp: App {
         WindowGroup(L10n.appName) {
             SessionView(model: model)
         }
-        .defaultSize(width: 1_180, height: 760)
-        .windowToolbarStyle(.unifiedCompact)
+        .defaultSize(width: 1_280, height: 760)
+        .windowToolbarStyle(.unified)
         .commands { SessionCommands(model: model) }
 
         Settings {
@@ -87,7 +87,13 @@ private struct SettingsView: View {
     var body: some View {
         Form {
             Section("默认串口参数") {
-                TextField("波特率", value: $model.configuration.baudRate, format: .number)
+                Picker("预设波特率", selection: $model.configuration.baudRate) {
+                    ForEach(BaudRateCatalog.rates(including: model.configuration.baudRate), id: \.self) { rate in
+                        Text(BaudRateCatalog.label(for: rate)).tag(rate)
+                    }
+                }
+                TextField("自定义波特率", value: $model.configuration.baudRate, format: .number)
+                    .help("可输入任意正整数；高速自定义速率由串口驱动决定是否支持。")
                 Picker("数据位", selection: $model.configuration.dataBits) {
                     ForEach(SerialConfiguration.DataBits.allCases, id: \.self) { Text("\($0.rawValue)").tag($0) }
                 }

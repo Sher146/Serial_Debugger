@@ -3,6 +3,28 @@ import SerialCore
 @testable import SerialMonitor
 
 final class SessionDomainTests: XCTestCase {
+    func testBaudRateCatalogContainsAllStandardAndCommonHighSpeedRates() {
+        XCTAssertEqual(BaudRateCatalog.standardRates.first, 50)
+        XCTAssertEqual(BaudRateCatalog.standardRates.last, 230_400)
+        XCTAssertEqual(BaudRateCatalog.highSpeedRates, [
+            460_800, 500_000, 576_000, 921_600, 1_000_000,
+            1_500_000, 2_000_000, 3_000_000
+        ])
+        XCTAssertEqual(BaudRateCatalog.rates(including: 115_200), BaudRateCatalog.presetRates)
+    }
+
+    func testBaudRateCatalogIncludesAndSortsAnArbitraryCustomRate() {
+        let rates = BaudRateCatalog.rates(including: 250_000)
+        XCTAssertEqual(rates, rates.sorted())
+        XCTAssertTrue(rates.contains(250_000))
+        XCTAssertEqual(rates.filter { $0 == 250_000 }.count, 1)
+    }
+
+    func testToolbarLayoutUsesWidePortPickerAndLargeIconTargets() {
+        XCTAssertEqual(DesignTokens.toolbarPortPickerWidth, 360)
+        XCTAssertGreaterThanOrEqual(DesignTokens.toolbarIconTargetSize, 32)
+    }
+
     func testHexEncoderAcceptsWhitespaceAndSeparators() throws {
         XCTAssertEqual(try HexCodec.decode("55 AA,01:00"), Data([0x55, 0xAA, 0x01, 0x00]))
         XCTAssertThrowsError(try HexCodec.decode("5"))

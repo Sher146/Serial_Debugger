@@ -31,13 +31,44 @@
 
 ## 用 Xcode 运行
 
-1. 在 Finder 中打开 `SerialMonitor.xcodeproj`。
+1. 在终端运行 `open SerialMonitor.xcodeproj`，或在 Finder 中打开工程。
 2. 在 Xcode 顶部选择 `SerialMonitor` scheme 和 **My Mac** 运行目标。
-3. 点击运行按钮（或按 `⌘R`）。如需验证沙盒下的实际串口访问，请在 **Signing & Capabilities** 配置可用的开发签名身份。
+3. 点击运行按钮（或按 `⌘R`）即可进行本地试用。只有要验证已签名沙盒 App 对真实串口的访问时，才需要在 **Signing & Capabilities** 配置开发签名身份。
 4. 启动后点击“刷新”，选择目标串口和波特率；如有需要，通过“参数”设置数据位、校验、停止位和流控制。
 5. 点击“连接”。连接成功后，在下方发送区选择 ASCII 或 HEX、行结束符并输入数据，再点击“发送”（或按 `⌘↩`）。
 
 未连接时，发送按钮会保持禁用。HEX 模式只接受合法的十六进制字节；校验错误会显示在输入框下方且不会清除已输入内容。
+
+### P3 功能试用位置
+
+- 在发送区设置内容、格式和行结束符后，使用“重复发送”启动/停止循环；可选 10 ms 以上的间隔，以及有限次数或无限循环。断连或发送失败会自动停止。
+- 通过工具栏的检查器按钮打开右侧“预设”，可新增、编辑、删除、单次发送或循环发送预设；预设会保存在本机。
+- 使用工具栏的“开始记录”选择目录后开始写入 NDJSON 日志，再次点击可停止；日志文件名由“设置”（`⌘,`）中的目录和前缀决定。
+- “设置”（`⌘,`）还可调整默认通信参数、显示格式、时间戳、自动跟随与预设面板状态。菜单中提供刷新、连接、发送、暂停、清空和日志的等价命令及快捷键。
+
+本地试用不包含真实 USB-UART、蓝牙对端或物理热拔出验证；常规启动使用系统 POSIX 串口实现，测试时才会启用内置的确定性场景替身。
+
+## 命令行运行
+
+无需开发签名即可构建并打开本地 Debug App：
+
+```zsh
+derived_data="${TMPDIR:-/tmp}/SerialMonitor-DerivedData"
+
+xcodebuild \
+  -project SerialMonitor.xcodeproj \
+  -scheme SerialMonitor \
+  -configuration Debug \
+  -destination 'platform=macOS,arch=arm64' \
+  ONLY_ACTIVE_ARCH=YES \
+  CODE_SIGNING_ALLOWED=NO \
+  -derivedDataPath "$derived_data" \
+  build
+
+open "$derived_data/Build/Products/Debug/SerialMonitor.app"
+```
+
+退出 App 后可再次执行上述命令；构建产物位于临时目录，不会写入仓库。若系统阻止打开，请改用上面的 Xcode 运行方式。
 
 ## 命令行构建与测试
 
@@ -60,7 +91,21 @@ xcodebuild \
   build
 ```
 
-`CODE_SIGNING_ALLOWED=NO` 不能验证 App Sandbox、串口设备权限或已签名 App 的行为。需要完整测试时，请配置开发签名后运行：
+日常回归请使用自动化脚本。它运行 SerialCore、App Unit、PTY 集成与 UI 测试，使用隔离的 DerivedData，并把 `.xcresult`、日志和覆盖率报告写入 gitignore 的 `TestArtifacts/<时间戳>/`：
+
+```zsh
+zsh Scripts/run-automated-tests.zsh
+```
+
+仅运行非 UI 的快速回归：
+
+```zsh
+zsh Scripts/run-automated-tests.zsh --quick
+```
+
+脚本不访问真实串口；PTY 和内置 UI 场景替身是日常自动化的串口替身。`--stress` 会追加 30 分钟 PTY 压测，本轮先留待试用确认后再执行。
+
+也可在已配置开发签名的环境中直接运行 Xcode 测试：
 
 ```zsh
 xcodebuild \
@@ -71,7 +116,7 @@ xcodebuild \
   test
 ```
 
-该 scheme 同时包含 Unit Tests 和 UI Tests。UI 测试需要能启动测试 Runner 的有效开发签名；当前没有可用签名身份时，相关失败应按环境限制处理，而不是误判为串口或界面逻辑失败。
+该 scheme 同时包含 Unit Tests 和 UI Tests。直接运行的 UI 测试需要可启动测试 Runner 的有效开发签名；无开发签名时优先使用上述脚本，它会为 UI Runner 使用 ad-hoc 签名。
 
 ## 常见问题
 

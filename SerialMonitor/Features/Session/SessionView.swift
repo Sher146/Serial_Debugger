@@ -19,7 +19,7 @@ struct SessionView: View {
                 .frame(height: 28)
         }
         .background(Color(nsColor: .windowBackgroundColor))
-        .background(WindowMinimumSizeBridge(minimumSize: NSSize(width: 980, height: 680)))
+        .background(WindowMinimumSizeBridge(minimumSize: NSSize(width: 1_120, height: 680)))
         .toolbar { SessionToolbarContent(model: model) }
         .task { model.start() }
         .onDisappear { model.shutdown() }
@@ -48,11 +48,10 @@ private struct SessionToolbarContent: ToolbarContent {
     @ObservedObject var model: SessionViewModel
     @State private var showsAdvancedParameters = false
 
-    private let baudRates = [300, 1_200, 2_400, 4_800, 9_600, 19_200, 38_400, 57_600, 115_200, 230_400]
-
     var body: some ToolbarContent {
         ToolbarItem(placement: .navigation) {
             Image(systemName: "cable.connector")
+                .imageScale(.large)
                 .accessibilityLabel(L10n.appName)
                 .accessibilityIdentifier("session.title")
         }
@@ -63,33 +62,47 @@ private struct SessionToolbarContent: ToolbarContent {
                     Text("—").tag("")
                 }
                 ForEach(model.ports) { port in
-                    Text(port.displayName).tag(port.path)
+                    Text(port.displayName)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .help(port.path)
+                        .tag(port.path)
                 }
             }
             .labelsHidden()
-            .frame(minWidth: 140, idealWidth: 180, maxWidth: 220)
+            // NSToolbar compresses flexible SwiftUI frames to its 100 pt
+            // default. A fixed width keeps long `/dev/cu.*` labels usable.
+            .frame(width: DesignTokens.toolbarPortPickerWidth)
+            .controlSize(.large)
             .disabled(model.isConfigurationLocked)
             .accessibilityLabel(L10n.port)
             .accessibilityIdentifier("session.port-picker")
+            .help(model.configuration.path.isEmpty ? L10n.port : model.configuration.path)
 
             Button(L10n.refresh, systemImage: "arrow.clockwise") { model.refreshPorts() }
                 .labelStyle(.iconOnly)
+                .toolbarIconControl()
                 .disabled(model.isConfigurationLocked)
                 .accessibilityLabel(L10n.refresh)
                 .accessibilityIdentifier("session.refresh")
 
             Picker(L10n.baudRate, selection: $model.configuration.baudRate) {
-                ForEach(baudRates, id: \.self) { Text("\($0)").tag($0) }
+                ForEach(BaudRateCatalog.rates(including: model.configuration.baudRate), id: \.self) { rate in
+                    Text(BaudRateCatalog.label(for: rate)).tag(rate)
+                }
             }
             .labelsHidden()
-            .frame(width: 105)
+            .frame(width: 124)
+            .controlSize(.large)
             .disabled(model.isConfigurationLocked)
             .accessibilityLabel(L10n.baudRate)
             .accessibilityIdentifier("session.baud-rate")
+            .accessibilityValue(BaudRateCatalog.label(for: model.configuration.baudRate))
 
             Button(parameterSummary, systemImage: "slider.horizontal.3") {
                 showsAdvancedParameters.toggle()
             }
+                .toolbarIconControl()
                 .disabled(model.isConfigurationLocked)
                 .popover(isPresented: $showsAdvancedParameters, arrowEdge: .bottom) {
                     AdvancedParametersPopover(configuration: $model.configuration)
@@ -104,15 +117,18 @@ private struct SessionToolbarContent: ToolbarContent {
         ToolbarItemGroup(placement: .primaryAction) {
             SessionStatusBadge(state: model.sessionState, title: model.statusTitle)
             Button(L10n.presets, systemImage: "sidebar.trailing") { model.showsPresets.toggle() }
+                .toolbarIconControl()
                 .accessibilityIdentifier("session.presets-toggle")
                 .help(model.showsPresets ? "隐藏预设检查器" : "显示预设检查器")
 
             Button(logButtonTitle, systemImage: logSymbol) { model.toggleLogging() }
+                .toolbarIconControl()
                 .accessibilityIdentifier("log.toggle")
                 .help(logButtonTitle)
 
             Button(connectionButtonTitle) { model.connectOrDisconnect() }
                 .buttonStyle(.borderedProminent)
+                .controlSize(.large)
                 .tint(connectionButtonTint)
                 .accessibilityIdentifier("session.connect-button")
         }
@@ -304,9 +320,11 @@ private struct ConsoleToolbar: View {
             ToolbarSeparator()
             ControlGroup {
                 Button(model.isPaused ? L10n.resume : L10n.pause, systemImage: model.isPaused ? "play.fill" : "pause.fill") { model.togglePause() }
+                    .toolbarIconControl()
                     .accessibilityIdentifier("console.pause")
                     .help(model.isPaused ? L10n.resume : L10n.pause)
                 Button(L10n.clear, systemImage: "trash") { model.clearRecords() }
+                    .toolbarIconControl()
                     .disabled(model.visibleRecords.isEmpty)
                     .accessibilityIdentifier("console.clear")
                     .help(L10n.clear)
@@ -326,13 +344,14 @@ private struct ConsoleToolbar: View {
                 Toggle(L10n.follow, isOn: $model.followsLatest).toggleStyle(.button)
                     .accessibilityIdentifier("console.follow")
             }
+            .controlSize(.large)
             Spacer()
             Text("\(model.visibleRecords.count) 条")
                 .foregroundStyle(.secondary)
                 .font(.caption.monospacedDigit())
         }
         .padding(.horizontal, DesignTokens.standardSpacing)
-        .padding(.vertical, 6)
+        .padding(.vertical, 8)
         .background(.bar)
     }
 }
@@ -690,6 +709,14 @@ private struct ToolbarSeparator: View {
             .fill(Color(nsColor: .separatorColor))
             .frame(width: 1, height: 16)
             .accessibilityHidden(true)
+    }
+}
+
+private extension View {
+    func toolbarIconControl() -> some View {
+        controlSize(.large)
+            .imageScale(.large)
+            .frame(minWidth: DesignTokens.toolbarIconTargetSize, minHeight: DesignTokens.toolbarIconTargetSize)
     }
 }
 
