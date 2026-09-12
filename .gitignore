@@ -8,3 +8,4 @@ build/
 *.xcuserstate
 xcuserdata/
 SerialMonitor.xcodeproj/project.xcworkspace/
+TestArtifacts/

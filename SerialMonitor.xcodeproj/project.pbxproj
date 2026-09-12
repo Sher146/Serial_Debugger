@@ -33,6 +33,7 @@
 		B00000000000000000000008 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000018 /* Localizable.xcstrings */; };
 		B00000000000000000000009 /* SessionViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000019 /* SessionViewModelTests.swift */; };
 		B0000000000000000000000A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000001A /* Assets.xcassets */; };
+		C00000000000000000000001 /* PTYStressTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00000000000000000000002 /* PTYStressTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -81,6 +82,7 @@
 		B00000000000000000000018 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		B00000000000000000000019 /* SessionViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionViewModelTests.swift; sourceTree = "<group>"; };
 		B0000000000000000000001A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		C00000000000000000000002 /* PTYStressTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PTYStressTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -131,6 +133,7 @@
 			children = (
 				A00000000000000000000013 /* PseudoTerminal.swift */,
 				A00000000000000000000014 /* POSIXSerialPortAdapterPTYTests.swift */,
+				C00000000000000000000002 /* PTYStressTests.swift */,
 			);
 			path = Tests/Serial;
 			sourceTree = "<group>";
@@ -399,6 +402,7 @@
 				A0000000000000000000000F /* MockSerialPort.swift in Sources */,
 				A00000000000000000000010 /* SessionCoordinatorTests.swift in Sources */,
 				B00000000000000000000009 /* SessionViewModelTests.swift in Sources */,
+				C00000000000000000000001 /* PTYStressTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -496,7 +500,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.serialmonitor.app.tests;
 				PRODUCT_MODULE_NAME = "$(PRODUCT_NAME:c99extidentifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -511,7 +515,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.serialmonitor.app.tests;
 				PRODUCT_MODULE_NAME = "$(PRODUCT_NAME:c99extidentifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -525,7 +529,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.serialmonitor.app.uitests;
 				PRODUCT_MODULE_NAME = "$(PRODUCT_NAME:c99extidentifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -539,7 +543,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.serialmonitor.app.uitests;
 				PRODUCT_MODULE_NAME = "$(PRODUCT_NAME:c99extidentifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";

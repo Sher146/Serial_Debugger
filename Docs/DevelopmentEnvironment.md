@@ -38,6 +38,9 @@
 ```zsh
 zsh Scripts/verify-development-environment.sh
 xcodebuild -project SerialMonitor.xcodeproj -scheme SerialMonitor -destination 'platform=macOS' ONLY_ACTIVE_ARCH=YES test
+zsh Scripts/run-automated-tests.zsh
 ```
 
 第二条命令必须在完整 Xcode、开发签名配置妥当后运行。`ONLY_ACTIVE_ARCH=YES` 仅用于开发机的 Debug 测试，避免本机双架构并行构建与本地 Swift Package 的模块产物发生竞态；Release 仍应在 P4 分别验证 arm64 与 x86_64。它会覆盖 Unit 与 UI target；硬件矩阵仍需单独执行。
+
+`run-automated-tests.zsh` 使用隔离的 DerivedData、PTY 和内置 UI 场景替身，可在无真实串口、无签名身份的开发机运行。使用 `--quick` 跳过 UI；使用 `--stress` 追加 30 分钟 PTY 压测。报告保存在 gitignore 的 `TestArtifacts/`。

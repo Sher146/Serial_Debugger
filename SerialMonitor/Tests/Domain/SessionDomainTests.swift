@@ -46,4 +46,43 @@ final class SessionDomainTests: XCTestCase {
     func testSafeFileNameRemovesPathSeparators() {
         XCTAssertEqual(SafeFileName.sanitize(" ../诊断/日志:1 "), "..-诊断-日志-1")
     }
+
+    @MainActor
+    func testPresetAndPreferencesStoresRoundTripLocally() {
+        let suite = "serial-monitor-tests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        let presetStore = PresetStore(defaults: defaults, key: "presets")
+        let preferencesStore = PreferencesStore(defaults: defaults, key: "preferences")
+        let preset = PresetSnapshot(name: "复位", content: "AT+RST", format: .ascii, lineEnding: .crlf)
+        presetStore.save([preset])
+
+        var preferences = AppPreferences()
+        preferences.sendFormat = .hex
+        preferences.logFileNamePrefix = "session log"
+        preferencesStore.save(preferences)
+
+        XCTAssertEqual(presetStore.load(), [preset])
+        XCTAssertEqual(preferencesStore.load().sendFormat, .hex)
+        XCTAssertEqual(preferencesStore.load().logFileNamePrefix, "session log")
+    }
+
+    func testFileLogServiceWritesFinalizedNDJSONRecord() async throws {
+        let directory = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("serial-monitor-log-test-\(UUID().uuidString)", isDirectory: true)
+        let logger = FileLogService()
+        await logger.start(configuration: LogConfiguration(directory: directory, fileNamePrefix: "test"))
+        await logger.append(CommunicationRecord(
+            direction: .transmitted,
+            rawBytes: Data([0x41, 0x0D]),
+            displayFormat: .ascii,
+            source: .manual,
+            sendResult: .sent
+        ))
+        await logger.stop()
+
+        let file = try XCTUnwrap(try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil).first)
+        let contents = try String(contentsOf: file, encoding: .utf8)
+        XCTAssertTrue(contents.contains("\"rawHex\":\"41 0D\""))
+        XCTAssertTrue(contents.contains("\"state\":\"sent\""))
+    }
 }

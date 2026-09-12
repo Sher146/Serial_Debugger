@@ -7,5 +7,9 @@ protocol SessionClient: Sendable {
     func connect(configuration: SerialConfiguration) async
     func disconnect() async
     func send(_ request: SendRequest) async
+    func startAutoSend(_ schedule: AutoSendSchedule) async
+    func stopAutoSend() async
     func clearRecords() async
+    func startLogging(configuration: LogConfiguration) async
+    func stopLogging() async
 }

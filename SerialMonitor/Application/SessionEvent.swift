@@ -13,6 +13,7 @@ enum SessionEvent: Sendable, Equatable {
     case recordsAppended([CommunicationRecord])
     case statisticsChanged(RecordStatistics)
     case logStatusChanged(LogStatus)
+    case autoSendStatusChanged(AutoSendStatus)
     case latestErrorChanged(SessionError?)
 }
 

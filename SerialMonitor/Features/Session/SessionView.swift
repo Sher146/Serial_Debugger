@@ -2,12 +2,7 @@ import SwiftUI
 import SerialCore
 
 struct SessionView: View {
-    @StateObject private var model: SessionViewModel
-    @State private var showsPresets = true
-
-    init(client: any SessionClient) {
-        _model = StateObject(wrappedValue: SessionViewModel(client: client))
-    }
+    @ObservedObject var model: SessionViewModel
 
     var body: some View {
         VStack(spacing: 0) {
@@ -17,7 +12,7 @@ struct SessionView: View {
                 .clipped()
             Divider()
             SendEditor(model: model)
-                .frame(height: 152)
+                .frame(height: 188)
 
             Divider()
             SessionStatusBar(model: model)
@@ -25,19 +20,20 @@ struct SessionView: View {
         }
         .background(Color(nsColor: .windowBackgroundColor))
         .background(WindowMinimumSizeBridge(minimumSize: NSSize(width: 980, height: 680)))
-        .toolbar { SessionToolbarContent(model: model, showsPresets: $showsPresets) }
+        .toolbar { SessionToolbarContent(model: model) }
         .task { model.start() }
+        .onDisappear { model.shutdown() }
         .accessibilityIdentifier("session.workspace")
     }
 
     @ViewBuilder
     private var workspace: some View {
         GeometryReader { proxy in
-            if showsPresets && proxy.size.width >= 1_040 {
+            if model.showsPresets && proxy.size.width >= 1_040 {
                 HSplitView {
                     ReceiveConsole(model: model)
                         .frame(minWidth: 700)
-                    PresetPlaceholder()
+                    PresetInspector(model: model)
                         .frame(minWidth: 220, idealWidth: 250, maxWidth: 320)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -50,7 +46,6 @@ struct SessionView: View {
 
 private struct SessionToolbarContent: ToolbarContent {
     @ObservedObject var model: SessionViewModel
-    @Binding var showsPresets: Bool
     @State private var showsAdvancedParameters = false
 
     private let baudRates = [300, 1_200, 2_400, 4_800, 9_600, 19_200, 38_400, 57_600, 115_200, 230_400]
@@ -90,6 +85,7 @@ private struct SessionToolbarContent: ToolbarContent {
             .frame(width: 105)
             .disabled(model.isConfigurationLocked)
             .accessibilityLabel(L10n.baudRate)
+            .accessibilityIdentifier("session.baud-rate")
 
             Button(parameterSummary, systemImage: "slider.horizontal.3") {
                 showsAdvancedParameters.toggle()
@@ -107,9 +103,13 @@ private struct SessionToolbarContent: ToolbarContent {
 
         ToolbarItemGroup(placement: .primaryAction) {
             SessionStatusBadge(state: model.sessionState, title: model.statusTitle)
-            Button(L10n.presets, systemImage: "sidebar.trailing") { showsPresets.toggle() }
+            Button(L10n.presets, systemImage: "sidebar.trailing") { model.showsPresets.toggle() }
                 .accessibilityIdentifier("session.presets-toggle")
-                .help(showsPresets ? "隐藏预设检查器" : "显示预设检查器")
+                .help(model.showsPresets ? "隐藏预设检查器" : "显示预设检查器")
+
+            Button(logButtonTitle, systemImage: logSymbol) { model.toggleLogging() }
+                .accessibilityIdentifier("log.toggle")
+                .help(logButtonTitle)
 
             Button(connectionButtonTitle) { model.connectOrDisconnect() }
                 .buttonStyle(.borderedProminent)
@@ -144,6 +144,16 @@ private struct SessionToolbarContent: ToolbarContent {
         case .disconnected, .error: .accentColor
         }
     }
+
+    private var logButtonTitle: String {
+        if case .recording = model.logStatus { return "停止记录" }
+        return "开始记录"
+    }
+
+    private var logSymbol: String {
+        if case .recording = model.logStatus { return "stop.circle.fill" }
+        return "record.circle"
+    }
 }
 
 private struct SessionStatusBadge: View {
@@ -160,6 +170,7 @@ private struct SessionStatusBadge: View {
         .font(DesignTokens.statusFont)
         .foregroundStyle(color)
         .accessibilityLabel(title)
+        .accessibilityValue(accessibilityState)
         .accessibilityIdentifier("session.connection-status")
     }
 
@@ -180,6 +191,16 @@ private struct SessionStatusBadge: View {
         case .disconnected: "circle.fill"
         }
     }
+
+    private var accessibilityState: String {
+        switch state {
+        case .disconnected: "disconnected"
+        case .opening: "opening"
+        case .connected: "connected"
+        case .closing: "closing"
+        case .error: "error"
+        }
+    }
 }
 
 private struct AdvancedParametersPopover: View {
@@ -191,17 +212,21 @@ private struct AdvancedParametersPopover: View {
             Picker(L10n.dataBits, selection: $configuration.dataBits) {
                 ForEach(SerialConfiguration.DataBits.allCases, id: \.self) { bits in Text("\(bits.rawValue)").tag(bits) }
             }
+            .accessibilityIdentifier("session.data-bits")
             Picker(L10n.parity, selection: $configuration.parity) {
                 ForEach(SerialConfiguration.Parity.allCases, id: \.self) { parity in Text(parity.rawValue.uppercased()).tag(parity) }
             }
+            .accessibilityIdentifier("session.parity")
             Picker(L10n.stopBits, selection: $configuration.stopBits) {
                 ForEach(SerialConfiguration.StopBits.allCases, id: \.self) { bits in Text("\(bits.rawValue)").tag(bits) }
             }
+            .accessibilityIdentifier("session.stop-bits")
             Picker(L10n.flowControl, selection: $configuration.flowControl) {
                 ForEach(SerialConfiguration.FlowControl.allCases, id: \.self) { flow in
                     Text(flow == .none ? L10n.none : L10n.hardware).tag(flow)
                 }
             }
+            .accessibilityIdentifier("session.flow-control")
         }
         .frame(width: 220)
         .accessibilityIdentifier("session.advanced-parameters")
@@ -297,7 +322,9 @@ private struct ConsoleToolbar: View {
                 .accessibilityLabel("接收显示格式")
                 .accessibilityIdentifier("console.display-format")
                 Toggle(L10n.timestamp, isOn: $model.showsTimestamps).toggleStyle(.button)
+                    .accessibilityIdentifier("console.timestamps")
                 Toggle(L10n.follow, isOn: $model.followsLatest).toggleStyle(.button)
+                    .accessibilityIdentifier("console.follow")
             }
             Spacer()
             Text("\(model.visibleRecords.count) 条")
@@ -337,6 +364,12 @@ private struct ConsoleRecordRow: View {
         .padding(.horizontal, DesignTokens.standardSpacing)
         .padding(.vertical, 1)
         .accessibilityLabel("\(record.direction.rawValue) \(RecordFormatter.string(for: record, format: format))")
+        .accessibilityIdentifier(recordAccessibilityIdentifier)
+    }
+
+    private var recordAccessibilityIdentifier: String {
+        let bytes = record.rawBytes.map { String(format: "%02X", $0) }.joined()
+        return "console.record.\(record.direction.rawValue).\(bytes)"
     }
 }
 
@@ -412,6 +445,33 @@ private struct SendEditor: View {
             .padding(.horizontal, DesignTokens.standardSpacing)
             .padding(.vertical, 8)
 
+            HStack(spacing: DesignTokens.compactSpacing) {
+                Label("自动发送", systemImage: "repeat")
+                    .font(.caption.weight(.semibold))
+                TextField("间隔 ms", value: $model.autoIntervalMilliseconds, format: .number)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 96)
+                    .accessibilityIdentifier("auto-send.interval")
+                TextField("次数（留空无限）", text: $model.autoRepetitionCountText)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 132)
+                    .accessibilityIdentifier("auto-send.count")
+                Button(model.isAutoSending ? "停止循环" : "开始循环") {
+                    model.isAutoSending ? model.stopAutoSend() : model.startEditorAutoSend()
+                }
+                .disabled(model.isAutoSending ? false : !model.canSend)
+                .accessibilityIdentifier("auto-send.toggle")
+                if case .running(_, let remaining) = model.autoSendStatus {
+                    Text(remaining.map { "剩余 \($0) 次" } ?? "持续发送中")
+                        .font(.caption)
+                        .foregroundStyle(Color.sessionConnected)
+                        .accessibilityIdentifier("auto-send.status")
+                }
+                Spacer()
+            }
+            .padding(.horizontal, DesignTokens.standardSpacing)
+            .padding(.bottom, 6)
+
             if let error = model.sendValidationError {
                 Label(error.localizedDescription, systemImage: "exclamationmark.triangle.fill")
                     .font(.caption)
@@ -427,13 +487,21 @@ private struct SendEditor: View {
     }
 }
 
-private struct PresetPlaceholder: View {
+private struct PresetInspector: View {
+    @ObservedObject var model: SessionViewModel
+    @State private var editor: PresetEditorState?
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Label(L10n.presets, systemImage: "list.bullet.rectangle")
                     .font(.subheadline.weight(.semibold))
                 Spacer()
+                Button("新增", systemImage: "plus") {
+                    editor = PresetEditorState()
+                }
+                .labelStyle(.iconOnly)
+                .accessibilityIdentifier("presets.add")
             }
             .padding(.horizontal, DesignTokens.standardSpacing)
             .padding(.vertical, 8)
@@ -442,21 +510,110 @@ private struct PresetPlaceholder: View {
             .fixedSize(horizontal: false, vertical: true)
             .layoutPriority(1)
 
-            VStack(alignment: .leading, spacing: DesignTokens.compactSpacing) {
-                Image(systemName: "clock.badge.questionmark")
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
-                Text(L10n.presetsPlaceholder)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+            if model.presets.isEmpty {
+                VStack(spacing: DesignTokens.compactSpacing) {
+                    ContentUnavailableView("暂无预设", systemImage: "tray", description: Text("新建后可单次发送或循环发送"))
+                    Text("预设检查器为空")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("presets.placeholder")
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                List(model.presets) { preset in
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(preset.name).font(.subheadline.weight(.semibold))
+                        Text("\(preset.format.rawValue.uppercased()) · \(preset.lineEnding.rawValue.uppercased())")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        HStack(spacing: 8) {
+                            Button("发送") { model.sendPreset(preset) }
+                                .disabled(!model.isConnected)
+                            Button(model.isAutoSending ? "停止" : "循环") {
+                                model.isAutoSending ? model.stopAutoSend() : model.startPresetAutoSend(preset)
+                            }
+                            .disabled(!model.isConnected && !model.isAutoSending)
+                            Button("编辑") { editor = PresetEditorState(preset: preset) }
+                        }
+                        .buttonStyle(.borderless)
+                    }
+                    .contextMenu {
+                        Button("删除", role: .destructive) { model.deletePreset(preset) }
+                    }
+                    .accessibilityIdentifier("presets.item.\(preset.id.uuidString)")
+                }
+                .listStyle(.plain)
             }
-            .padding(DesignTokens.standardSpacing)
-            Spacer()
         }
         .frame(maxHeight: .infinity, alignment: .top)
         .background(.bar)
-        .accessibilityIdentifier("presets.placeholder")
+        .accessibilityIdentifier("presets.inspector")
+        .sheet(item: $editor) { state in
+            PresetEditorSheet(state: state, model: model)
+        }
+    }
+}
+
+private struct PresetEditorState: Identifiable {
+    let id: UUID
+    let presetID: UUID?
+    var name: String
+    var content: String
+    var format: DisplayFormat
+    var lineEnding: LineEnding
+
+    init(preset: PresetSnapshot? = nil) {
+        id = preset?.id ?? UUID()
+        presetID = preset?.id
+        name = preset?.name ?? ""
+        content = preset?.content ?? ""
+        format = preset?.format ?? .ascii
+        lineEnding = preset?.lineEnding ?? .crlf
+    }
+}
+
+private struct PresetEditorSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @State var state: PresetEditorState
+    @ObservedObject var model: SessionViewModel
+    @State private var error: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DesignTokens.standardSpacing) {
+            Text(state.presetID == nil ? "新建预设" : "编辑预设").font(.headline)
+            TextField("名称", text: $state.name).accessibilityIdentifier("presets.editor.name")
+            Picker("格式", selection: $state.format) {
+                Text("ASCII").tag(DisplayFormat.ascii)
+                Text("HEX").tag(DisplayFormat.hex)
+            }
+            Picker(L10n.lineEnding, selection: $state.lineEnding) {
+                Text(L10n.none).tag(LineEnding.none)
+                Text("CR").tag(LineEnding.cr)
+                Text("LF").tag(LineEnding.lf)
+                Text("CRLF").tag(LineEnding.crlf)
+            }
+            TextEditor(text: $state.content)
+                .font(DesignTokens.consoleFont)
+                .frame(minHeight: 120)
+                .overlay { Rectangle().stroke(Color(nsColor: .separatorColor)) }
+                .accessibilityIdentifier("presets.editor.content")
+            if let error { Text(error).font(.caption).foregroundStyle(Color.sessionError) }
+            HStack {
+                Spacer()
+                Button("取消") { dismiss() }
+                Button("保存") {
+                    if let validationError = model.savePreset(id: state.presetID, name: state.name, content: state.content, format: state.format, lineEnding: state.lineEnding) {
+                        error = validationError.localizedDescription
+                    } else {
+                        dismiss()
+                    }
+                }
+                .keyboardShortcut(.defaultAction)
+                .accessibilityIdentifier("presets.editor.save")
+            }
+        }
+        .padding(24)
+        .frame(width: 420)
     }
 }
 
@@ -469,11 +626,17 @@ private struct SessionStatusBar: View {
             Divider()
             Text("RX \(formattedBytes(model.statistics?.receivedByteCount ?? 0))")
                 .foregroundStyle(Color.sessionConnected)
+                .accessibilityIdentifier("status.rx")
+                .accessibilityValue("\(model.statistics?.receivedByteCount ?? 0)")
             Text("TX \(formattedBytes(model.statistics?.transmittedByteCount ?? 0))")
                 .foregroundStyle(.secondary)
+                .accessibilityIdentifier("status.tx")
+                .accessibilityValue("\(model.statistics?.transmittedByteCount ?? 0)")
             Divider()
             Text("\(model.statistics?.recordCount ?? 0) 条 · \(formattedBytes(model.statistics?.storedByteCount ?? 0))")
                 .foregroundStyle(.secondary)
+                .accessibilityIdentifier("status.records")
+                .accessibilityValue("\(model.statistics?.recordCount ?? 0)")
             if let statistics = model.statistics, statistics.truncationCount > 0 {
                 Text("已截断 \(statistics.truncationCount) 次").foregroundStyle(Color.sessionAttention)
             }
@@ -485,6 +648,7 @@ private struct SessionStatusBar: View {
                 Label(error.localizedDescription, systemImage: "exclamationmark.triangle.fill")
                     .foregroundStyle(Color.sessionError)
                     .lineLimit(1)
+                    .accessibilityIdentifier("status.error")
             }
         }
         .font(.caption)
@@ -530,23 +694,23 @@ private struct ToolbarSeparator: View {
 }
 
 #Preview("Disconnected") {
-    SessionView(client: SessionPreviewClient(state: .disconnected))
+    SessionView(model: SessionViewModel(client: SessionPreviewClient(state: .disconnected)))
 }
 
 #Preview("Opening") {
-    SessionView(client: SessionPreviewClient(state: .opening(SerialConfiguration(path: "/dev/cu.usbserial-demo"))))
+    SessionView(model: SessionViewModel(client: SessionPreviewClient(state: .opening(SerialConfiguration(path: "/dev/cu.usbserial-demo")))))
 }
 
 #Preview("Connected") {
-    SessionView(client: SessionPreviewClient(
+    SessionView(model: SessionViewModel(client: SessionPreviewClient(
         state: .connected(SerialConfiguration(path: "/dev/cu.usbserial-demo")),
         records: [
             CommunicationRecord(direction: .received, rawBytes: Data("ready\\r\\n".utf8), displayFormat: .ascii),
             CommunicationRecord(direction: .transmitted, rawBytes: Data("AT+RST\\r\\n".utf8), displayFormat: .ascii, source: .manual, sendResult: .sent)
         ]
-    ))
+    )))
 }
 
 #Preview("Error") {
-    SessionView(client: SessionPreviewClient(state: .error(.unexpected("端口已被占用"))))
+    SessionView(model: SessionViewModel(client: SessionPreviewClient(state: .error(.unexpected("端口已被占用")))))
 }

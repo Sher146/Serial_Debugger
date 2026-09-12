@@ -38,13 +38,37 @@ struct PresetSnapshot: Sendable, Codable, Equatable, Identifiable {
     let name: String
     let content: String
     let format: DisplayFormat
+    let lineEnding: LineEnding
 
-    init(id: UUID = UUID(), name: String, content: String, format: DisplayFormat) {
+    init(id: UUID = UUID(), name: String, content: String, format: DisplayFormat, lineEnding: LineEnding = .crlf) {
         self.id = id
         self.name = name
         self.content = content
         self.format = format
+        self.lineEnding = lineEnding
     }
+}
+
+struct AutoSendSchedule: Sendable, Equatable {
+    let request: SendRequest
+    let interval: Duration
+    /// `nil` means repeat until explicitly stopped or the session fails.
+    let repetitionCount: Int?
+
+    init(request: SendRequest, intervalMilliseconds: Int, repetitionCount: Int?) throws {
+        guard intervalMilliseconds >= 10 else { throw ValidationError.invalidInterval }
+        guard repetitionCount == nil || repetitionCount! > 0 else {
+            throw ValidationError.invalidSetting("发送次数必须大于 0")
+        }
+        self.request = request
+        self.interval = .milliseconds(intervalMilliseconds)
+        self.repetitionCount = repetitionCount
+    }
+}
+
+enum AutoSendStatus: Sendable, Equatable {
+    case inactive
+    case running(source: SendSource, remainingCount: Int?)
 }
 
 enum SessionError: Error, Sendable, Equatable, LocalizedError {
@@ -334,5 +358,66 @@ enum SafeFileName {
         let result = value.unicodeScalars.map { prohibited.contains($0) ? "-" : String($0) }.joined()
             .trimmingCharacters(in: .whitespacesAndNewlines)
         return result.isEmpty ? fallback : String(result.prefix(80))
+    }
+}
+
+struct AppPreferences: Codable, Equatable {
+    var defaultConfiguration = SerialConfiguration(path: "")
+    var receiveFormat: DisplayFormat = .ascii
+    var sendFormat: DisplayFormat = .ascii
+    var lineEnding: LineEnding = .crlf
+    var showsTimestamps = true
+    var followsLatest = true
+    var showsPresets = true
+    var logDirectoryPath: String?
+    var logDirectoryBookmark: Data?
+    var logFileNamePrefix = "serial-monitor"
+}
+
+@MainActor
+final class PreferencesStore {
+    private let defaults: UserDefaults
+    private let key: String
+
+    init(defaults: UserDefaults = .standard, key: String = "serial-monitor.preferences.v1") {
+        self.defaults = defaults
+        self.key = key
+    }
+
+    func load() -> AppPreferences {
+        guard let data = defaults.data(forKey: key),
+              let preferences = try? JSONDecoder().decode(AppPreferences.self, from: data) else {
+            return AppPreferences()
+        }
+        return preferences
+    }
+
+    func save(_ preferences: AppPreferences) {
+        guard let data = try? JSONEncoder().encode(preferences) else { return }
+        defaults.set(data, forKey: key)
+    }
+}
+
+@MainActor
+final class PresetStore {
+    private let defaults: UserDefaults
+    private let key: String
+
+    init(defaults: UserDefaults = .standard, key: String = "serial-monitor.presets.v1") {
+        self.defaults = defaults
+        self.key = key
+    }
+
+    func load() -> [PresetSnapshot] {
+        guard let data = defaults.data(forKey: key),
+              let presets = try? JSONDecoder().decode([PresetSnapshot].self, from: data) else {
+            return []
+        }
+        return presets.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+
+    func save(_ presets: [PresetSnapshot]) {
+        guard let data = try? JSONEncoder().encode(presets) else { return }
+        defaults.set(data, forKey: key)
     }
 }

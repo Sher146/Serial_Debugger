@@ -17,6 +17,10 @@ actor SessionCoordinator: SessionClient {
     private var receiveTask: Task<Void, Never>?
     private var connectionEventTask: Task<Void, Never>?
     private var txPumpTask: Task<Void, Never>?
+    private var autoSendTask: Task<Void, Never>?
+    private var autoSendID = UUID()
+    private var autoSendStatus: AutoSendStatus = .inactive
+    private var sendContinuations: [UUID: CheckedContinuation<SendResult, Never>] = [:]
     private var pendingRecordEvents: [CommunicationRecord] = []
     private var recordBatchTask: Task<Void, Never>?
 
@@ -40,6 +44,7 @@ actor SessionCoordinator: SessionClient {
             .stateChanged(stateMachine.state),
             .statisticsChanged(statistics),
             .logStatusChanged(logStatus),
+            .autoSendStatusChanged(autoSendStatus),
             .latestErrorChanged(latestError)
         ])
     }
@@ -77,15 +82,54 @@ actor SessionCoordinator: SessionClient {
     }
 
     func send(_ request: SendRequest) async {
+        _ = await enqueueSend(request, waitForCompletion: false)
+    }
+
+    func startAutoSend(_ schedule: AutoSendSchedule) async {
+        await stopAutoSend()
         guard case .connected = stateMachine.state else {
             latestError = .notConnected
             await eventHub.publish(.latestErrorChanged(latestError))
             return
         }
+        let identifier = UUID()
+        autoSendID = identifier
+        autoSendStatus = .running(source: schedule.request.source, remainingCount: schedule.repetitionCount)
+        await eventHub.publish(.autoSendStatusChanged(autoSendStatus))
+        autoSendTask = Task { [weak self] in
+            await self?.runAutoSend(schedule, identifier: identifier)
+        }
+    }
+
+    func stopAutoSend() async {
+        autoSendID = UUID()
+        autoSendTask?.cancel()
+        autoSendTask = nil
+        guard autoSendStatus != .inactive else { return }
+        autoSendStatus = .inactive
+        await eventHub.publish(.autoSendStatusChanged(.inactive))
+    }
+
+    func startLogging(configuration: LogConfiguration) async {
+        await logService.start(configuration: configuration)
+        await eventHub.publish(.logStatusChanged(await logService.currentStatus()))
+    }
+
+    func stopLogging() async {
+        await logService.stop()
+        await eventHub.publish(.logStatusChanged(await logService.currentStatus()))
+    }
+
+    private func enqueueSend(_ request: SendRequest, waitForCompletion: Bool) async -> SendResult? {
+        guard case .connected = stateMachine.state else {
+            latestError = .notConnected
+            await eventHub.publish(.latestErrorChanged(latestError))
+            return .failed(.notConnected)
+        }
         guard !request.payload.isEmpty else {
             latestError = .validation(.emptyPayload)
             await eventHub.publish(.latestErrorChanged(latestError))
-            return
+            return .failed(.validation(.emptyPayload))
         }
 
         let record = CommunicationRecord(
@@ -98,7 +142,14 @@ actor SessionCoordinator: SessionClient {
         )
         await appendRecord(record)
         await txQueue.enqueue(QueuedSend(recordID: record.id, request: request))
-        startTXPumpIfNeeded()
+        guard waitForCompletion else {
+            startTXPumpIfNeeded()
+            return nil
+        }
+        return await withCheckedContinuation { continuation in
+            sendContinuations[record.id] = continuation
+            startTXPumpIfNeeded()
+        }
     }
 
     func clearRecords() async {
@@ -114,6 +165,10 @@ actor SessionCoordinator: SessionClient {
     func currentState() -> SessionState { stateMachine.state }
 
     func recordsSnapshot() async -> [CommunicationRecord] { await recordStore.allRecords() }
+
+    func statisticsSnapshot() async -> RecordStatistics { await recordStore.statistics() }
+
+    func currentAutoSendStatus() -> AutoSendStatus { autoSendStatus }
 
     private func transition(to state: SessionState) async {
         guard stateMachine.transition(to: state) else { return }
@@ -195,12 +250,17 @@ actor SessionCoordinator: SessionClient {
 
     private func completeSend(_ recordID: UUID, result: SendResult) async {
         guard let record = await recordStore.updateSendResult(recordID: recordID, result: result) else { return }
+        await logService.append(record)
         await queueRecordEvent(record)
+        sendContinuations.removeValue(forKey: recordID)?.resume(returning: result)
+        await eventHub.publish(.logStatusChanged(await logService.currentStatus()))
     }
 
     private func appendRecord(_ record: CommunicationRecord) async {
         await recordStore.append(record)
-        await logService.append(record)
+        if record.direction == .received {
+            await logService.append(record)
+        }
         await queueRecordEvent(record)
         await eventHub.publish(.statisticsChanged(await recordStore.statistics()))
         await eventHub.publish(.logStatusChanged(await logService.currentStatus()))
@@ -235,6 +295,7 @@ actor SessionCoordinator: SessionClient {
         receiveTask?.cancel()
         connectionEventTask?.cancel()
         txPumpTask?.cancel()
+        await stopAutoSend()
         let cancelled = await txQueue.cancelAll()
         for queued in cancelled {
             await completeSend(queued.recordID, result: .failed(error))
@@ -259,13 +320,16 @@ actor SessionCoordinator: SessionClient {
         receiveTask?.cancel()
         connectionEventTask?.cancel()
         txPumpTask?.cancel()
+        await stopAutoSend()
         let cancelled = await txQueue.cancelAll()
         for queued in cancelled {
             await completeSend(queued.recordID, result: .failed(.cancelled))
         }
         await flushPendingRecordEvents()
-        await logService.stop()
-        await logService.flushAndClose()
+        if wasActive || publishDisconnected {
+            await logService.stop()
+            await logService.flushAndClose()
+        }
         await serialPort.close()
         if wasActive {
             await transition(to: .disconnected)
@@ -273,5 +337,39 @@ actor SessionCoordinator: SessionClient {
             await eventHub.publish(.stateChanged(.disconnected))
         }
         await eventHub.publish(.logStatusChanged(await logService.currentStatus()))
+    }
+
+    private func runAutoSend(_ schedule: AutoSendSchedule, identifier: UUID) async {
+        var remaining = schedule.repetitionCount
+        while !Task.isCancelled, autoSendID == identifier {
+            guard let result = await enqueueSend(schedule.request, waitForCompletion: true) else { return }
+            guard autoSendID == identifier, !Task.isCancelled else { return }
+            guard result == .sent else {
+                await stopAutoSendIfCurrent(identifier)
+                return
+            }
+            if let count = remaining {
+                let nextCount = count - 1
+                remaining = nextCount
+                if nextCount == 0 {
+                    await stopAutoSendIfCurrent(identifier)
+                    return
+                }
+            }
+            autoSendStatus = .running(source: schedule.request.source, remainingCount: remaining)
+            await eventHub.publish(.autoSendStatusChanged(autoSendStatus))
+            do {
+                try await Task.sleep(for: schedule.interval)
+            } catch {
+                return
+            }
+        }
+    }
+
+    private func stopAutoSendIfCurrent(_ identifier: UUID) async {
+        guard autoSendID == identifier else { return }
+        autoSendTask = nil
+        autoSendStatus = .inactive
+        await eventHub.publish(.autoSendStatusChanged(.inactive))
     }
 }

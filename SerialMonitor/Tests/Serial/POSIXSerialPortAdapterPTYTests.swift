@@ -32,4 +32,43 @@ final class POSIXSerialPortAdapterPTYTests: XCTestCase {
         XCTAssertEqual(count, payload.count)
         XCTAssertEqual(Data(received), payload)
     }
+
+    func testReadFromPTYReachesIncomingStream() async throws {
+        let terminal = try PseudoTerminal()
+        let adapter = POSIXSerialPortAdapter()
+        defer {
+            terminal.closeMaster()
+            terminal.closeSlave()
+        }
+
+        try await adapter.open(configuration: SerialConfiguration(path: terminal.slavePath))
+        var iterator = (await adapter.incomingBytes()).makeAsyncIterator()
+        try await Task.sleep(for: .milliseconds(25))
+        let payload = Data([0x52, 0x58, 0x0A])
+        let written = payload.withUnsafeBytes { Darwin.write(terminal.master, $0.baseAddress, payload.count) }
+        XCTAssertEqual(written, payload.count)
+
+        let received = try await iterator.next()
+        await adapter.close()
+        XCTAssertEqual(received, payload)
+    }
+
+    func testCloseIsIdempotentAndSubsequentWriteFails() async throws {
+        let terminal = try PseudoTerminal()
+        let adapter = POSIXSerialPortAdapter()
+        defer {
+            terminal.closeMaster()
+            terminal.closeSlave()
+        }
+
+        try await adapter.open(configuration: SerialConfiguration(path: terminal.slavePath))
+        await adapter.close()
+        await adapter.close()
+        do {
+            try await adapter.write(Data([0x00]), deadline: ContinuousClock().now.advanced(by: .seconds(1)))
+            XCTFail("Expected write to fail after close")
+        } catch let error as SerialError {
+            XCTAssertEqual(error.category, .writeFailed)
+        }
+    }
 }
