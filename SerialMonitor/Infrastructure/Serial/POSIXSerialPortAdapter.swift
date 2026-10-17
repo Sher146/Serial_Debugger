@@ -135,20 +135,13 @@ public actor POSIXSerialPortAdapter: SerialPorting {
     }
 
     private func makeStreams() {
-        incomingStream = AsyncThrowingStream { [weak self] continuation in
-            Task { await self?.setIncomingContinuation(continuation) }
-        }
-        eventStream = AsyncStream { [weak self] continuation in
-            Task { await self?.setEventContinuation(continuation) }
-        }
-    }
+        let incomingPair = AsyncThrowingStream<Data, Error>.makeStream()
+        incomingStream = incomingPair.stream
+        incomingContinuation = incomingPair.continuation
 
-    private func setIncomingContinuation(_ continuation: AsyncThrowingStream<Data, Error>.Continuation) {
-        incomingContinuation = continuation
-    }
-
-    private func setEventContinuation(_ continuation: AsyncStream<SerialConnectionEvent>.Continuation) {
-        eventContinuation = continuation
+        let eventPair = AsyncStream<SerialConnectionEvent>.makeStream()
+        eventStream = eventPair.stream
+        eventContinuation = eventPair.continuation
     }
 
     private func startReader() {

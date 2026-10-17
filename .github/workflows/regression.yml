@@ -20,8 +20,15 @@ jobs:
         os: [macos-14, macos-15]
     steps:
       - uses: actions/checkout@v4
-      - name: Swift version
-        run: swift --version
+      - name: Select newest Xcode
+        run: |
+          set -euo pipefail
+          latest="$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1 || true)"
+          if [[ -n "$latest" ]]; then
+            echo "Selecting $latest"
+            sudo xcode-select -s "$latest/Contents/Developer"
+          fi
+          swift --version
       - name: Run SerialCore package tests
         run: swift test --package-path Packages/SerialCore
 
