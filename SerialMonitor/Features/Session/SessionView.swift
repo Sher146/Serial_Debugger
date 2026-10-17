@@ -19,7 +19,7 @@ struct SessionView: View {
                 .frame(height: 28)
         }
         .background(Color(nsColor: .windowBackgroundColor))
-        .background(WindowMinimumSizeBridge(minimumSize: NSSize(width: 1_120, height: 680)))
+        .background(WindowMinimumSizeBridge(minimumSize: NSSize(width: 980, height: 680)))
         .toolbar { SessionToolbarContent(model: model) }
         .task { model.start() }
         .onDisappear { model.shutdown() }

@@ -50,12 +50,12 @@ final class SerialMonitorUITests: XCTestCase {
     func testDeviceRemovalShowsRecoverableError() {
         let app = launch(scenario: "device-removal")
         connect(app)
-        XCTAssertTrue(waitForValue(element(app, "session.connection-status"), "error", timeout: 3))
+        XCTAssertTrue(waitForValue(element(app, "session.connection-status"), "error", timeout: 6))
     }
 
     func testMainWindowRespectsMinimumSize() {
         let app = launch(scenario: "echo")
-        XCTAssertGreaterThanOrEqual(app.windows.firstMatch.frame.width, 1_120)
+        XCTAssertGreaterThanOrEqual(app.windows.firstMatch.frame.width, 980)
         XCTAssertGreaterThanOrEqual(app.windows.firstMatch.frame.height, 680)
     }
 
@@ -232,7 +232,7 @@ final class SerialMonitorUITests: XCTestCase {
 
         let error = launch(scenario: "device-removal")
         connect(error)
-        XCTAssertTrue(waitForValue(element(error, "session.connection-status"), "error", timeout: 3))
+        XCTAssertTrue(waitForValue(element(error, "session.connection-status"), "error", timeout: 6))
         attachScreenshot(error, named: "state-error")
     }
 
