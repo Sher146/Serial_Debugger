@@ -48,33 +48,26 @@ jobs:
           DIST_OUTPUT: ${{ github.workspace }}/build/dist
         run: bash Scripts/build_distribution.sh
 
+      - name: Extract release notes from CHANGELOG
+        run: |
+          set -euo pipefail
+          version="${{ steps.version.outputs.version }}"
+          awk -v v="$version" '
+            $0 ~ "^## \\[" v "\\]" {flag=1; next}
+            flag && /^## \[/ {flag=0}
+            flag {print}
+          ' CHANGELOG.md > release-notes.md
+          if [[ ! -s release-notes.md ]]; then
+            echo "本版本更新见 CHANGELOG.md。" > release-notes.md
+          fi
+          cat release-notes.md
+
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', steps.version.outputs.version) }}
           name: Serial Monitor ${{ steps.version.outputs.version }}
-          generate_release_notes: true
+          body_path: release-notes.md
           files: |
             build/dist/*.zip
             build/dist/*.dmg
-          body: |
-            ## 下载安装
-
-            附件包含 `SerialMonitor-<版本>.dmg` 与 `.zip`，支持 Apple Silicon 与 Intel。
-            **最低运行版本 macOS 14**（编译使用 macOS 26 SDK，Liquid Glass 在低版本自动回退为 Material）。
-
-            ### ⚠️ 关于首次打开
-
-            当前发布包为 **ad-hoc 签名、未公证**。受 Gatekeeper 限制，首次打开会提示
-            “无法验证开发者/已损坏”。任选一种方式放行：
-
-            - 访达中 **右键 → 打开 → 仍要打开**；或
-            - 终端执行：`xattr -dr com.apple.quarantine /Applications/SerialMonitor.app`
-
-            要做到下载后无提示直接运行，需要 Apple Developer Program 的
-            **Developer ID 签名 + 公证**（见 `Scripts/build_release.sh` / `Scripts/notarize.sh`）。
-
-            ### 已知限制
-
-            - 未完成真实 USB-UART 设备矩阵验证；串口功能以系统 POSIX/termios 为基线。
-            - macOS 14 的 App 运行时尚未实机验证。

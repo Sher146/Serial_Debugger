@@ -53,8 +53,6 @@ struct SettingsView: View {
             .listStyle(.sidebar)
             .frame(width: 200)
 
-            Divider()
-
             VStack(alignment: .leading, spacing: 0) {
                 Text((selection ?? .general).title)
                     .appFont(.title, weight: .bold)
@@ -109,7 +107,6 @@ struct SettingsView: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
         .background(.bar)
-        .overlay(alignment: .top) { Divider() }
     }
 
     private var general: some View {

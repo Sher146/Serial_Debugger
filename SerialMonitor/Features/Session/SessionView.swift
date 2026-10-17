@@ -12,11 +12,9 @@ struct SessionView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .layoutPriority(1)
                 .clipped()
-            Divider()
             SendEditor(model: model)
                 .frame(height: 188)
 
-            Divider()
             SessionStatusBar(model: model)
                 .frame(height: 28)
         }
@@ -321,9 +319,8 @@ private struct ConsoleToolbar: View {
     @ObservedObject var model: SessionViewModel
 
     var body: some View {
-        HStack(spacing: DesignTokens.compactSpacing) {
+        HStack(spacing: DesignTokens.standardSpacing) {
             Text(L10n.records).appFont(.headline)
-            ToolbarSeparator()
             ControlGroup {
                 Button(model.isPaused ? L10n.resume : L10n.pause, systemImage: model.isPaused ? "play.fill" : "pause.fill") { model.togglePause() }
                     .toolbarIconControl()
@@ -335,7 +332,6 @@ private struct ConsoleToolbar: View {
                     .accessibilityIdentifier("console.clear")
                     .help(L10n.clear)
             }
-            ToolbarSeparator()
             Picker("", selection: $model.receiveFormat) {
                 Text("ASCII").tag(DisplayFormat.ascii)
                 Text("HEX").tag(DisplayFormat.hex)
@@ -634,9 +630,8 @@ private struct SendEditor: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: DesignTokens.compactSpacing) {
+            HStack(spacing: DesignTokens.standardSpacing) {
                 Text(L10n.send).appFont(.headline)
-                ToolbarSeparator()
                 Picker("", selection: $model.sendFormat) {
                     Text("ASCII").tag(DisplayFormat.ascii)
                     Text("HEX").tag(DisplayFormat.hex)
@@ -904,7 +899,6 @@ private struct SessionStatusBar: View {
     var body: some View {
         HStack(spacing: DesignTokens.standardSpacing) {
             Label(portSummary, systemImage: "cable.connector")
-            Divider()
             Text("RX \(formattedBytes(model.statistics?.receivedByteCount ?? 0))")
                 .foregroundStyle(Color.sessionConnected)
                 .accessibilityIdentifier("status.rx")
@@ -913,7 +907,6 @@ private struct SessionStatusBar: View {
                 .foregroundStyle(.secondary)
                 .accessibilityIdentifier("status.tx")
                 .accessibilityValue("\(model.statistics?.transmittedByteCount ?? 0)")
-            Divider()
             Text("\(model.statistics?.recordCount ?? 0) 条 · \(formattedBytes(model.statistics?.storedByteCount ?? 0))")
                 .foregroundStyle(.secondary)
                 .accessibilityIdentifier("status.records")
@@ -927,7 +920,6 @@ private struct SessionStatusBar: View {
                 .accessibilityIdentifier("status.log")
                 .accessibilityValue(logStateValue)
             if let error = model.latestError {
-                Divider()
                 Label(error.localizedDescription, systemImage: "exclamationmark.triangle.fill")
                     .foregroundStyle(Color.sessionError)
                     .lineLimit(1)
@@ -973,15 +965,6 @@ private struct SessionStatusBar: View {
         if count < 1_024 { return "\(count) B" }
         if count < 1_024 * 1_024 { return String(format: "%.1f KB", Double(count) / 1_024) }
         return String(format: "%.1f MB", Double(count) / (1_024 * 1_024))
-    }
-}
-
-private struct ToolbarSeparator: View {
-    var body: some View {
-        Rectangle()
-            .fill(Color(nsColor: .separatorColor))
-            .frame(width: 1, height: 16)
-            .accessibilityHidden(true)
     }
 }
 
