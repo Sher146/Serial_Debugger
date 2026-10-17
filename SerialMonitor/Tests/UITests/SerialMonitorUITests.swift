@@ -5,17 +5,16 @@ final class SerialMonitorUITests: XCTestCase {
     @MainActor
     func testSettingsUsesConfirmationActionsWithoutSidebarToggle() {
         let app = launch(scenario: "echo")
-        app.menuBars.menuBarItems["SerialMonitor"].click()
-        app.menuItems["设置…"].click()
+        app.typeKey(",", modifierFlags: .command)
 
-        let cancel = app.buttons["settings.cancel"]
-        let save = app.buttons["settings.save"]
+        let cancel = button(app, "settings.cancel")
+        let save = button(app, "settings.save")
         XCTAssertTrue(cancel.waitForExistence(timeout: 3))
         XCTAssertTrue(save.exists)
-        XCTAssertFalse(app.buttons["隐藏边栏"].exists)
+        XCTAssertFalse(button(app, "隐藏边栏").exists)
 
         // "Restore defaults" must ask for confirmation before mutating the draft.
-        app.buttons["settings.reset"].click()
+        button(app, "settings.reset").click()
         let confirm = app.sheets.buttons["恢复默认"]
         XCTAssertTrue(confirm.waitForExistence(timeout: 3))
         app.sheets.buttons["取消"].firstMatch.click()
@@ -24,11 +23,11 @@ final class SerialMonitorUITests: XCTestCase {
     func testLaunchShowsWorkspaceAndConnectsWithScenarioPort() {
         let app = launch(scenario: "echo")
         XCTAssertTrue(element(app, "session.workspace").waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["session.connect-button"].exists)
+        XCTAssertTrue(button(app, "session.connect-button").exists)
         XCTAssertTrue(element(app, "console.records").exists)
         XCTAssertTrue(element(app, "session.port-picker").exists)
 
-        app.buttons["session.connect-button"].click()
+        button(app, "session.connect-button").click()
         XCTAssertTrue(waitForValue(element(app, "session.connection-status"), "connected"))
     }
 
@@ -36,15 +35,15 @@ final class SerialMonitorUITests: XCTestCase {
         let app = launch(scenario: "burst")
         connect(app)
         XCTAssertTrue(element(app, "console.record.RX.4649525354").waitForExistence(timeout: 2))
-        XCTAssertTrue(app.buttons["console.clear"].isEnabled)
+        XCTAssertTrue(button(app, "console.clear").isEnabled)
     }
 
     func testOpeningCanBeCancelled() {
         let app = launch(scenario: "opening")
-        app.buttons["session.connect-button"].click()
+        button(app, "session.connect-button").click()
         XCTAssertTrue(waitForValue(element(app, "session.connection-status"), "opening"))
-        XCTAssertFalse(app.buttons["session.parameters"].isEnabled)
-        app.buttons["session.connect-button"].click()
+        XCTAssertFalse(button(app, "session.parameters").isEnabled)
+        button(app, "session.connect-button").click()
         XCTAssertTrue(waitForValue(element(app, "session.connection-status"), "disconnected"))
     }
 
@@ -67,10 +66,10 @@ final class SerialMonitorUITests: XCTestCase {
         XCTAssertEqual(portPicker.value as? String, "cu.Bluetooth-Incoming-Port")
 
         for identifier in ["session.refresh", "session.parameters", "session.presets-toggle", "log.toggle"] {
-            let button = app.buttons[identifier]
-            XCTAssertTrue(button.exists, "Missing toolbar button \(identifier)")
-            XCTAssertGreaterThanOrEqual(button.frame.width, 32, "Toolbar button \(identifier) is too narrow")
-            XCTAssertGreaterThanOrEqual(button.frame.height, 32, "Toolbar button \(identifier) is too short")
+            let control = button(app, identifier)
+            XCTAssertTrue(control.exists, "Missing toolbar button \(identifier)")
+            XCTAssertGreaterThanOrEqual(control.frame.width, 32, "Toolbar button \(identifier) is too narrow")
+            XCTAssertGreaterThanOrEqual(control.frame.height, 32, "Toolbar button \(identifier) is too short")
         }
     }
 
@@ -96,17 +95,17 @@ final class SerialMonitorUITests: XCTestCase {
         editor.typeText("0")
 
         XCTAssertTrue(element(app, "send.validation-error").waitForExistence(timeout: 2))
-        XCTAssertFalse(app.buttons["send.button"].isEnabled)
+        XCTAssertFalse(button(app, "send.button").isEnabled)
     }
 
     func testPauseShowsBannerAndResumeHidesIt() {
         let app = launch(scenario: "burst")
         connect(app)
-        app.buttons["console.pause"].click()
+        button(app, "console.pause").click()
         let banner = element(app, "console.paused-banner")
         XCTAssertTrue(banner.waitForExistence(timeout: 2))
 
-        app.buttons["console.pause"].click()
+        button(app, "console.pause").click()
         XCTAssertFalse(element(app, "console.paused-banner").waitForExistence(timeout: 1))
     }
 
@@ -127,7 +126,7 @@ final class SerialMonitorUITests: XCTestCase {
         connect(app)
         ensurePresetInspector(app)
 
-        app.buttons["presets.add"].click()
+        button(app, "presets.add").click()
         let name = app.textFields["presets.editor.name"]
         XCTAssertTrue(name.waitForExistence(timeout: 3))
         name.click()
@@ -135,7 +134,7 @@ final class SerialMonitorUITests: XCTestCase {
         let content = app.textViews["presets.editor.content"]
         content.click()
         content.typeText("AT")
-        app.buttons["presets.editor.save"].click()
+        button(app, "presets.editor.save").click()
 
         let preset = app.staticTexts["复位"]
         XCTAssertTrue(preset.waitForExistence(timeout: 3))
@@ -157,10 +156,10 @@ final class SerialMonitorUITests: XCTestCase {
         connect(app)
         XCTAssertTrue(waitForValue(element(app, "status.log"), "inactive"))
 
-        app.buttons["log.toggle"].click()
+        button(app, "log.toggle").click()
         XCTAssertTrue(waitForValue(element(app, "status.log"), "recording", timeout: 3))
 
-        app.buttons["log.toggle"].click()
+        button(app, "log.toggle").click()
         XCTAssertTrue(waitForValue(element(app, "status.log"), "inactive", timeout: 3))
     }
 
@@ -172,11 +171,11 @@ final class SerialMonitorUITests: XCTestCase {
         editor.click()
         editor.typeText("41")
 
-        app.buttons["auto-send.toggle"].click()
+        button(app, "auto-send.toggle").click()
         XCTAssertTrue(element(app, "auto-send.status").waitForExistence(timeout: 3))
-        XCTAssertEqual(app.buttons["auto-send.toggle"].label, "停止循环")
+        XCTAssertEqual(button(app, "auto-send.toggle").label, "停止循环")
 
-        app.buttons["auto-send.toggle"].click()
+        button(app, "auto-send.toggle").click()
         XCTAssertFalse(element(app, "auto-send.status").waitForExistence(timeout: 2))
     }
 
@@ -199,8 +198,8 @@ final class SerialMonitorUITests: XCTestCase {
         XCTAssertTrue(element(app, "session.workspace").waitForExistence(timeout: 5))
 
         XCTAssertEqual(element(app, "session.connection-status").value as? String, "disconnected")
-        XCTAssertEqual(app.buttons["session.connect-button"].label, "连接")
-        XCTAssertTrue(app.buttons["send.button"].label.contains("发送"))
+        XCTAssertEqual(button(app, "session.connect-button").label, "连接")
+        XCTAssertTrue(button(app, "send.button").label.contains("发送"))
         for identifier in ["status.rx", "status.tx", "status.records", "status.log"] {
             XCTAssertTrue(element(app, identifier).exists, "Missing status element \(identifier)")
         }
@@ -211,7 +210,7 @@ final class SerialMonitorUITests: XCTestCase {
         for mode in ["Dark", "Light"] {
             let app = launch(scenario: "echo", extraArguments: ["-AppleInterfaceStyle", mode])
             XCTAssertTrue(element(app, "session.workspace").waitForExistence(timeout: 5), "\(mode) workspace missing")
-            app.buttons["session.connect-button"].click()
+            button(app, "session.connect-button").click()
             XCTAssertTrue(waitForValue(element(app, "session.connection-status"), "connected"), "\(mode) failed to connect")
             app.terminate()
         }
@@ -246,13 +245,13 @@ final class SerialMonitorUITests: XCTestCase {
 
     private func connect(_ app: XCUIApplication) {
         XCTAssertTrue(element(app, "session.workspace").waitForExistence(timeout: 5))
-        app.buttons["session.connect-button"].click()
+        button(app, "session.connect-button").click()
         XCTAssertTrue(waitForValue(element(app, "session.connection-status"), "connected"))
     }
 
     private func ensurePresetInspector(_ app: XCUIApplication) {
         if !element(app, "presets.inspector").waitForExistence(timeout: 2) {
-            app.buttons["session.presets-toggle"].click()
+            button(app, "session.presets-toggle").click()
             XCTAssertTrue(element(app, "presets.inspector").waitForExistence(timeout: 2))
         }
     }
@@ -286,6 +285,10 @@ final class SerialMonitorUITests: XCTestCase {
 
     private func element(_ app: XCUIApplication, _ identifier: String) -> XCUIElement {
         app.descendants(matching: .any).matching(identifier: identifier).firstMatch
+    }
+
+    private func button(_ app: XCUIApplication, _ identifier: String) -> XCUIElement {
+        app.buttons.matching(identifier: identifier).firstMatch
     }
 
     private func waitForValue(_ element: XCUIElement, _ value: String, timeout: TimeInterval = 2) -> Bool {
