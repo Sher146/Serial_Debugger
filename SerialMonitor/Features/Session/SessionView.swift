@@ -29,18 +29,16 @@ struct SessionView: View {
 
     @ViewBuilder
     private var workspace: some View {
-        GeometryReader { proxy in
-            if model.showsPresets && proxy.size.width >= 1_040 {
-                HSplitView {
-                    ReceiveConsole(model: model)
-                        .frame(minWidth: 700)
-                    PresetInspector(model: model)
-                        .frame(minWidth: 220, idealWidth: 250, maxWidth: 320)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
+        if model.showsPresets {
+            HSplitView {
                 ReceiveConsole(model: model)
+                    .frame(minWidth: 700)
+                PresetInspector(model: model)
+                    .frame(minWidth: 220, idealWidth: 250, maxWidth: 320)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            ReceiveConsole(model: model)
         }
     }
 }

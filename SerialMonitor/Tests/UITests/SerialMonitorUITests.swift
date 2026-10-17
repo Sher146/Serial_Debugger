@@ -222,7 +222,7 @@ final class SerialMonitorUITests: XCTestCase {
         attachScreenshot(disconnected, named: "state-disconnected")
 
         let opening = launch(scenario: "opening")
-        opening.buttons["session.connect-button"].click()
+        button(opening, "session.connect-button").click()
         XCTAssertTrue(waitForValue(element(opening, "session.connection-status"), "opening"))
         attachScreenshot(opening, named: "state-opening")
 
