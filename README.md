@@ -18,7 +18,7 @@
 - 手动启停的 NDJSON 日志、设置窗口、菜单命令与快捷键
 - 中文 SwiftUI 主工作区，以及 macOS 原生工具栏和检查器布局
 
-尚未完成：打包发布、签名与公证流程，以及真实设备兼容性验证。
+发布脚本（归档/导出/公证/验证）已就绪，但 Developer ID 签名与公证受凭据限制、真实设备兼容性验证受硬件限制，均尚未执行；详见 [发布检查清单](Docs/ReleaseChecklist.md)。
 
 ## 环境要求
 
@@ -115,6 +115,15 @@ xcodebuild \
 
 该 scheme 同时包含 Unit Tests 和 UI Tests。直接运行的 UI 测试需要可启动测试 Runner 的有效开发签名；无开发签名时优先使用上述脚本，它会为 UI Runner 使用 ad-hoc 签名。
 
+## 持续集成
+
+`.github/workflows/regression.yml` 在 push 与 PR 时运行：
+
+- `serialcore`（`macos-14` 与 `macos-15`）：`swift test --package-path Packages/SerialCore`
+- `app`（`macos-15` + 最新 Xcode）：`zsh Scripts/run-automated-tests.zsh --all`，并把阶段摘要与 `TestArtifacts/` 作为构建产物上传
+
+CI 不访问真实串口，也不做签名/公证；它覆盖 macOS 15 上的完整单元/PTY 与 UI 回归（含 Material 回退分支）。
+
 ## 常见问题
 
 ### 刷新后没有可选串口
@@ -132,6 +141,14 @@ xcodebuild \
 ## 硬件验证边界
 
 当前串口实现以系统 POSIX/termios 和 IOKit 为基线，但尚未完成 CH340、CP210x、FTDI、CDC-ACM 的实机回环、热拔出、占用和沙盒测试。因此项目尚不宣称支持或认证任何特定 USB-UART 芯片。
+
+接入设备与 TX-RX 跳线后，可运行硬件冒烟（不进入 CI）：
+
+```zsh
+bash Scripts/hardware-smoke.sh --port /dev/cu.<device> --wait-unplug 20
+```
+
+它会验证打开/配置、回环收发与占用错误，结果回填 [真实设备测试矩阵](Docs/RealDeviceTestMatrix.md)。
 
 详细的环境配置、验证命令与限制见 [开发环境说明](Docs/DevelopmentEnvironment.md)，设备验证进度见 [串口兼容性矩阵](Docs/SerialCompatibilityMatrix.md) 与 [真实设备测试矩阵](Docs/RealDeviceTestMatrix.md)，依赖决策见 [依赖登记](Docs/Dependencies.md)，性能见 [性能报告](Docs/PerformanceReport.md)，发布见 [发布检查清单](Docs/ReleaseChecklist.md) 与 [依赖与许可证](Docs/Licenses.md)。
 
