@@ -40,6 +40,7 @@ actor SessionPreviewClient: SessionClient {
     func startAutoSend(_ schedule: AutoSendSchedule) async {}
     func stopAutoSend() async {}
     func clearRecords() async {}
+    func updateRecordLimits(maximumRecords: Int, maximumBytes: Int) async {}
     func startLogging(configuration: LogConfiguration) async {}
     func stopLogging() async {}
 }
@@ -52,6 +53,7 @@ enum SessionUITestScenario: String, Sendable {
     case writeFailure = "write-failure"
     case deviceRemoval = "device-removal"
     case burst
+    case autoSendLoop = "auto-send"
 
     init?(arguments: [String]) {
         guard let index = arguments.firstIndex(of: "-ui-testing-scenario"),
@@ -160,10 +162,18 @@ actor SessionScenarioClient: SessionClient {
         await eventHub.publish(.statisticsChanged(statistics))
     }
 
+    func updateRecordLimits(maximumRecords: Int, maximumBytes: Int) async {}
+
     func startAutoSend(_ schedule: AutoSendSchedule) async {
         await eventHub.publish(.autoSendStatusChanged(.running(source: schedule.request.source, remainingCount: schedule.repetitionCount)))
         await send(schedule.request)
-        await eventHub.publish(.autoSendStatusChanged(.inactive))
+        // The loop scenario keeps reporting "running" so the UI can be observed
+        // and stopped deterministically; other scenarios complete immediately.
+        guard scenario == .autoSendLoop else {
+            await eventHub.publish(.autoSendStatusChanged(.inactive))
+            return
+        }
+        await eventHub.publish(.autoSendStatusChanged(.running(source: schedule.request.source, remainingCount: nil)))
     }
 
     func stopAutoSend() async {

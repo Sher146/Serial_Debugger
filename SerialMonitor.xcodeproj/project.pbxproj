@@ -36,6 +36,7 @@
 		C00000000000000000000001 /* PTYStressTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00000000000000000000002 /* PTYStressTests.swift */; };
 		D00000000000000000000001 /* BaudRateCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00000000000000000000011 /* BaudRateCatalog.swift */; };
 		D00000000000000000000002 /* SerialBaudRateBridge.c in Sources */ = {isa = PBXBuildFile; fileRef = D00000000000000000000012 /* SerialBaudRateBridge.c */; };
+		E00000000000000000000001 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E00000000000000000000002 /* SettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -87,6 +88,7 @@
 		C00000000000000000000002 /* PTYStressTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PTYStressTests.swift; sourceTree = "<group>"; };
 		D00000000000000000000011 /* BaudRateCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaudRateCatalog.swift; sourceTree = "<group>"; };
 		D00000000000000000000012 /* SerialBaudRateBridge.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = SerialBaudRateBridge.c; sourceTree = "<group>"; };
+		E00000000000000000000002 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -182,6 +184,7 @@
 				A00000000000000000000028 /* SerialMonitor/Domain */,
 				A00000000000000000000029 /* SerialMonitor/Application */,
 				B00000000000000000000021 /* SerialMonitor/Features/Session */,
+				E00000000000000000000003 /* SerialMonitor/Features/Settings */,
 				B00000000000000000000022 /* SerialMonitor/Shared */,
 				A0000000000000000000002A /* SerialMonitor/Tests/Domain */,
 				A0000000000000000000002B /* SerialMonitor/Tests/Application */,
@@ -247,6 +250,14 @@
 				B00000000000000000000017 /* WindowConfigurationBridge.swift */,
 			);
 			path = SerialMonitor/Shared;
+			sourceTree = "<group>";
+		};
+		E00000000000000000000003 /* SerialMonitor/Features/Settings */ = {
+			isa = PBXGroup;
+			children = (
+				E00000000000000000000002 /* SettingsView.swift */,
+			);
+			path = SerialMonitor/Features/Settings;
 			sourceTree = "<group>";
 		};
 		B00000000000000000000023 /* SerialMonitor/Tests/Features */ = {
@@ -393,6 +404,7 @@
 				B00000000000000000000001 /* SessionViewModel.swift in Sources */,
 				B00000000000000000000002 /* SessionPreviewClient.swift in Sources */,
 				B00000000000000000000003 /* SessionView.swift in Sources */,
+				E00000000000000000000001 /* SettingsView.swift in Sources */,
 				B00000000000000000000004 /* DesignTokens.swift in Sources */,
 				B00000000000000000000005 /* VisualEffectsSupport.swift in Sources */,
 				B00000000000000000000006 /* Localization.swift in Sources */,
@@ -472,7 +484,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.serialmonitor.app;
 				PRODUCT_MODULE_NAME = "$(PRODUCT_NAME:c99extidentifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -493,7 +505,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.serialmonitor.app;
 				PRODUCT_MODULE_NAME = "$(PRODUCT_NAME:c99extidentifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -508,7 +520,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.serialmonitor.app.tests;
 				PRODUCT_MODULE_NAME = "$(PRODUCT_NAME:c99extidentifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -523,7 +535,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.serialmonitor.app.tests;
 				PRODUCT_MODULE_NAME = "$(PRODUCT_NAME:c99extidentifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -537,7 +549,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.serialmonitor.app.uitests;
 				PRODUCT_MODULE_NAME = "$(PRODUCT_NAME:c99extidentifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -551,7 +563,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.serialmonitor.app.uitests;
 				PRODUCT_MODULE_NAME = "$(PRODUCT_NAME:c99extidentifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";

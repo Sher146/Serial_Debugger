@@ -4,7 +4,7 @@
 
 面向 macOS 的单窗口串口监视与调试工具。当前开发版本支持发现串口、配置通信参数、连接/断开、接收原始字节、以 ASCII 或 HEX 查看记录，以及手动发送数据。
 
-> 当前工程的实际最低运行版本为 **macOS 26.0**。产品开发计划中的 macOS 14+ 兼容目标尚未重新验证，不能视为当前运行承诺。
+> 工程部署目标为 **macOS 14.0**，以 macOS 26+ 的 Liquid Glass 为优先体验、低版本回退到系统 Material。当前已在 macOS 27 本机与 macOS 15 CI 验证；**macOS 14 的 App 运行时尚未实机验证**，涉及编译需 macOS 26+ SDK（见下）。
 
 ## 当前状态
 
@@ -22,8 +22,8 @@
 
 ## 环境要求
 
-- macOS 26.0 或更高版本
-- 完整版 Xcode 26.6（仅安装 Command Line Tools 不足以运行和测试此 App）
+- 运行最低版本 macOS 14.0；当前已在 macOS 27 本机与 macOS 15 CI 验证，**macOS 14 运行时未验证**
+- 编译需要包含 macOS 26 SDK 的完整 Xcode 26+（Liquid Glass API 需在编译期存在；仅安装 Command Line Tools 不足以运行和测试此 App）
 - 已选择完整 Xcode 工具链，例如：`xcode-select -p` 应指向 `/Applications/Xcode.app/Contents/Developer`
 - 当前已在 Apple Silicon 开发机上验证
 
@@ -91,19 +91,16 @@ xcodebuild \
   build
 ```
 
-日常回归请使用自动化脚本。它运行 SerialCore、App Unit、PTY 集成与 UI 测试，使用隔离的 DerivedData，并把 `.xcresult`、日志和覆盖率报告写入 gitignore 的 `TestArtifacts/<时间戳>/`：
+日常回归请使用自动化脚本。它按阶段运行 SerialCore、App Unit、PTY 集成与 UI 测试，使用隔离的 DerivedData，并把各阶段日志、`.xcresult`、覆盖率报告与 `summary.json`/`summary.md` 写入 gitignore 的 `TestArtifacts/<时间戳>/`：
 
 ```zsh
-zsh Scripts/run-automated-tests.zsh
+zsh Scripts/run-automated-tests.zsh            # 默认：SerialCore + 单元/PTY + UI
+zsh Scripts/run-automated-tests.zsh --quick    # 仅 SerialCore + 单元/PTY
+zsh Scripts/run-automated-tests.zsh --ui-only  # 仅 UI
+zsh Scripts/run-automated-tests.zsh --stress   # 追加 30 分钟 Py PTY 压测
 ```
 
-仅运行非 UI 的快速回归：
-
-```zsh
-zsh Scripts/run-automated-tests.zsh --quick
-```
-
-脚本不访问真实串口；PTY 和内置 UI 场景替身是日常自动化的串口替身。`--stress` 会追加 30 分钟 PTY 压测，本轮先留待试用确认后再执行。
+脚本不访问真实串口；PTY、`Scripts/pty_stress.py` 与内置 UI 场景替身是日常自动化的串口替身。压测默认跳过，需 `--stress` 显式启用；`--xctest-stress` 可运行进程内 `PTYStressTests`。覆盖率仅记录，不设百分比门禁。矩阵见 [自动化测试矩阵](Docs/AutomatedTestMatrix.md)，界面检查见 [UI 测试与界面检查清单](Docs/UITestChecklist.md)。
 
 也可在已配置开发签名的环境中直接运行 Xcode 测试：
 
@@ -136,4 +133,17 @@ xcodebuild \
 
 当前串口实现以系统 POSIX/termios 和 IOKit 为基线，但尚未完成 CH340、CP210x、FTDI、CDC-ACM 的实机回环、热拔出、占用和沙盒测试。因此项目尚不宣称支持或认证任何特定 USB-UART 芯片。
 
-详细的环境配置、验证命令与限制见 [开发环境说明](Docs/DevelopmentEnvironment.md)，设备验证进度见 [串口兼容性矩阵](Docs/SerialCompatibilityMatrix.md)，依赖决策见 [依赖登记](Docs/Dependencies.md)。
+详细的环境配置、验证命令与限制见 [开发环境说明](Docs/DevelopmentEnvironment.md)，设备验证进度见 [串口兼容性矩阵](Docs/SerialCompatibilityMatrix.md) 与 [真实设备测试矩阵](Docs/RealDeviceTestMatrix.md)，依赖决策见 [依赖登记](Docs/Dependencies.md)，性能见 [性能报告](Docs/PerformanceReport.md)，发布见 [发布检查清单](Docs/ReleaseChecklist.md) 与 [依赖与许可证](Docs/Licenses.md)。
+
+## 发布（受限）
+
+发布脚本已就绪，但缺少 Developer ID 与公证凭据、真实设备，尚不可执行签名/公证：
+
+```zsh
+bash Scripts/build_release.sh --smoke                    # 无签名 Release 构建冒烟
+DEVELOPMENT_TEAM=<team> bash Scripts/build_release.sh    # 归档并导出
+NOTARY_PROFILE=<profile> bash Scripts/notarize.sh <app>  # 提交/等待/staple
+bash Scripts/verify_release.sh <app>                     # 验签、entitlement、Gatekeeper、公证与包内无用户数据
+```
+
+凭据只通过本机钥匙串/环境变量提供，不写入仓库。

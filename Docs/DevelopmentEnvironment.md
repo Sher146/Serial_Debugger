@@ -2,9 +2,9 @@
 
 本项目以 macOS 14+ 为最低运行版本，并以 macOS 26 的 Liquid Glass 视觉为优先验收目标。开发机必须使用包含 macOS 26 SDK 的完整 Xcode；Command Line Tools 不能构建、运行或测试该 App。
 
-## 当前状态（2026-08-16）
+## 当前状态（2026-10-17）
 
-当前开发机为 Apple Silicon、macOS 26.6.1，完整 Xcode 26.6（17F113）已安装并由 `xcode-select` 选中，`xcodebuild`、XCTest、`simctl` 和本地 Swift Package 解析均可用。无签名 Debug 构建及两项 PTY Unit 测试已通过；当前仍没有可用代码签名身份，且不执行真实串口硬件测试。因此 P0 的串口实现结论仍为“未决”。
+当前开发机为 Apple Silicon、macOS 27.0.1，完整 Xcode 27.1（27A9275）已安装并由 `xcode-select` 选中，`xcodebuild`、XCTest、`simctl` 和本地 Swift Package 解析均可用。工程部署目标已由 26.0 降为 14.0（`SerialCore` 亦为 14），本机 `run-automated-tests.zsh --all`（SerialCore + 单元/PTY + 18 项 UI）全绿。仍没有可用代码签名身份，且不执行真实串口硬件测试；CI（`macos-15` + Xcode 26）负责跨版本运行时验证，macOS 14 的 App 运行时尚未覆盖。因此 P0 的串口实机结论仍为“未决”。
 
 ## 一次性安装
 

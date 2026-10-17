@@ -158,6 +158,11 @@ actor SessionCoordinator: SessionClient {
         await eventHub.publish(.statisticsChanged(await recordStore.statistics()))
     }
 
+    func updateRecordLimits(maximumRecords: Int, maximumBytes: Int) async {
+        await recordStore.updateLimits(maximumRecords: maximumRecords, maximumBytes: maximumBytes)
+        await eventHub.publish(.statisticsChanged(await recordStore.statistics()))
+    }
+
     func shutdown() async {
         await disconnect()
     }

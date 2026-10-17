@@ -16,6 +16,13 @@ struct SerialMonitorApp: App {
             let defaults = UserDefaults(suiteName: "serial-monitor.ui-test.\(UUID().uuidString)")!
             preferencesStore = PreferencesStore(defaults: defaults, key: "preferences")
             presetStore = PresetStore(defaults: defaults, key: "presets")
+            // A deterministic log directory lets the logging toggle run without
+            // presenting a blocking NSOpenPanel during automation.
+            var testPreferences = preferencesStore.load()
+            testPreferences.logDirectoryPath = FileManager.default.temporaryDirectory
+                .appendingPathComponent("serial-monitor-ui-test-logs", isDirectory: true)
+                .path
+            preferencesStore.save(testPreferences)
         } else {
             client = SessionCoordinator(serialPort: POSIXSerialPortAdapter(), logService: FileLogService())
             preferencesStore = PreferencesStore()
@@ -27,9 +34,10 @@ struct SerialMonitorApp: App {
     var body: some Scene {
         WindowGroup(L10n.appName) {
             SessionView(model: model)
+                .preferredColorScheme(model.appearance.colorScheme)
+                .dynamicTypeSize(model.fontScale.dynamicTypeSize)
         }
         .defaultSize(width: 1_280, height: 760)
-        .windowToolbarStyle(.unified)
         .commands { SessionCommands(model: model) }
 
         Settings {
@@ -78,58 +86,5 @@ private struct SessionCommands: Commands {
     private var logTitle: String {
         if case .recording = model.logStatus { return "停止记录" }
         return "开始记录"
-    }
-}
-
-private struct SettingsView: View {
-    @ObservedObject var model: SessionViewModel
-
-    var body: some View {
-        Form {
-            Section("默认串口参数") {
-                Picker("预设波特率", selection: $model.configuration.baudRate) {
-                    ForEach(BaudRateCatalog.rates(including: model.configuration.baudRate), id: \.self) { rate in
-                        Text(BaudRateCatalog.label(for: rate)).tag(rate)
-                    }
-                }
-                TextField("自定义波特率", value: $model.configuration.baudRate, format: .number)
-                    .help("可输入任意正整数；高速自定义速率由串口驱动决定是否支持。")
-                Picker("数据位", selection: $model.configuration.dataBits) {
-                    ForEach(SerialConfiguration.DataBits.allCases, id: \.self) { Text("\($0.rawValue)").tag($0) }
-                }
-                Picker("校验", selection: $model.configuration.parity) {
-                    ForEach(SerialConfiguration.Parity.allCases, id: \.self) { Text($0.rawValue.uppercased()).tag($0) }
-                }
-                Picker("停止位", selection: $model.configuration.stopBits) {
-                    ForEach(SerialConfiguration.StopBits.allCases, id: \.self) { Text("\($0.rawValue)").tag($0) }
-                }
-                Picker("流控制", selection: $model.configuration.flowControl) {
-                    ForEach(SerialConfiguration.FlowControl.allCases, id: \.self) { Text($0.rawValue == "none" ? "无" : "硬件").tag($0) }
-                }
-            }
-            Section("显示与发送") {
-                Picker("接收格式", selection: $model.receiveFormat) {
-                    Text("ASCII").tag(DisplayFormat.ascii); Text("HEX").tag(DisplayFormat.hex)
-                }
-                Picker("发送格式", selection: $model.sendFormat) {
-                    Text("ASCII").tag(DisplayFormat.ascii); Text("HEX").tag(DisplayFormat.hex)
-                }
-                Picker("默认行结束符", selection: $model.lineEnding) {
-                    Text("无").tag(LineEnding.none); Text("CR").tag(LineEnding.cr); Text("LF").tag(LineEnding.lf); Text("CRLF").tag(LineEnding.crlf)
-                }
-                Toggle("显示时间戳", isOn: $model.showsTimestamps)
-                Toggle("自动跟随", isOn: $model.followsLatest)
-                Toggle("显示预设检查器", isOn: $model.showsPresets)
-            }
-            Section("日志") {
-                TextField("文件名前缀", text: $model.logFileNamePrefix)
-                Text("开始记录时可选择或复用本机日志目录。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(20)
-        .frame(width: 440)
-        .accessibilityIdentifier("settings.window")
     }
 }

@@ -10,6 +10,7 @@ protocol SessionClient: Sendable {
     func startAutoSend(_ schedule: AutoSendSchedule) async
     func stopAutoSend() async
     func clearRecords() async
+    func updateRecordLimits(maximumRecords: Int, maximumBytes: Int) async
     func startLogging(configuration: LogConfiguration) async
     func stopLogging() async
 }

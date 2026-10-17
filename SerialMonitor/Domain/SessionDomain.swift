@@ -1,4 +1,5 @@
 import Foundation
+import CoreFoundation
 import SerialCore
 
 enum RecordDirection: String, Sendable, Codable, Equatable {
@@ -9,6 +10,63 @@ enum RecordDirection: String, Sendable, Codable, Equatable {
 enum DisplayFormat: String, Sendable, Codable, Equatable, CaseIterable {
     case ascii
     case hex
+}
+
+enum AppAppearance: String, Sendable, Codable, CaseIterable, Equatable {
+    case system, light, dark
+}
+
+enum AppFontScale: String, Sendable, Codable, CaseIterable, Equatable {
+    case small, standard, large
+
+    var multiplier: CGFloat {
+        switch self {
+        case .small: 0.9
+        case .standard: 1
+        case .large: 1.1
+        }
+    }
+}
+
+enum ConsoleLineSpacing: String, Sendable, Codable, CaseIterable, Equatable {
+    case compact, standard, relaxed
+
+    var points: CGFloat {
+        switch self {
+        case .compact: 0
+        case .standard: 2
+        case .relaxed: 4
+        }
+    }
+}
+
+enum TextEncodingPreference: String, Sendable, Codable, CaseIterable, Equatable {
+    case utf8, gb18030
+
+    var stringEncoding: String.Encoding {
+        switch self {
+        case .utf8: .utf8
+        case .gb18030:
+            String.Encoding(rawValue: CFStringConvertEncodingToNSStringEncoding(CFStringEncoding(CFStringEncodings.GB_18030_2000.rawValue)))
+        }
+    }
+}
+
+enum HexSeparator: String, Sendable, Codable, CaseIterable, Equatable {
+    case space, none, comma
+
+    var value: String {
+        switch self {
+        case .space: " "
+        case .none: ""
+        case .comma: ","
+        }
+    }
+}
+
+struct HexPresentation: Sendable, Codable, Equatable {
+    var separator: HexSeparator = .space
+    var usesUppercase = true
 }
 
 enum SendSource: String, Sendable, Codable, Equatable {
@@ -193,18 +251,19 @@ enum HexCodec {
         return result
     }
 
-    static func encode(_ data: Data) -> String {
-        data.map { String(format: "%02X", $0) }.joined(separator: " ")
+    static func encode(_ data: Data, presentation: HexPresentation = HexPresentation()) -> String {
+        let format = presentation.usesUppercase ? "%02X" : "%02x"
+        return data.map { String(format: format, $0) }.joined(separator: presentation.separator.value)
     }
 }
 
 enum TextPayloadCodec {
-    static func decodeForDisplay(_ data: Data) -> String {
-        String(decoding: data, as: UTF8.self)
+    static func decodeForDisplay(_ data: Data, encoding: TextEncodingPreference = .utf8) -> String {
+        String(data: data, encoding: encoding.stringEncoding) ?? String(repeating: "\u{FFFD}", count: max(1, data.count))
     }
 
-    static func encode(_ text: String) -> Data {
-        Data(text.utf8)
+    static func encode(_ text: String, encoding: TextEncodingPreference = .utf8) -> Data {
+        text.data(using: encoding.stringEncoding, allowLossyConversion: false) ?? Data()
     }
 }
 
@@ -213,12 +272,17 @@ enum SendPayloadEncoder {
         text: String,
         format: DisplayFormat,
         lineEnding: LineEnding,
+        textEncoding: TextEncodingPreference = .utf8,
         source: SendSource = .manual,
         presetSnapshot: PresetSnapshot? = nil
     ) throws -> SendRequest {
         let payload: Data
         switch format {
-        case .ascii: payload = TextPayloadCodec.encode(text)
+        case .ascii:
+            payload = TextPayloadCodec.encode(text, encoding: textEncoding)
+            guard !payload.isEmpty || text.isEmpty else {
+                throw ValidationError.invalidSetting("内容无法按所选文本编码发送")
+            }
         case .hex: payload = try HexCodec.decode(text)
         }
         guard !payload.isEmpty else { throw ValidationError.emptyPayload }
@@ -232,10 +296,15 @@ enum SendPayloadEncoder {
 }
 
 enum RecordFormatter {
-    static func string(for record: CommunicationRecord, format: DisplayFormat) -> String {
+    static func string(
+        for record: CommunicationRecord,
+        format: DisplayFormat,
+        textEncoding: TextEncodingPreference = .utf8,
+        hexPresentation: HexPresentation = HexPresentation()
+    ) -> String {
         switch format {
-        case .ascii: TextPayloadCodec.decodeForDisplay(record.rawBytes)
-        case .hex: HexCodec.encode(record.rawBytes)
+        case .ascii: TextPayloadCodec.decodeForDisplay(record.rawBytes, encoding: textEncoding)
+        case .hex: HexCodec.encode(record.rawBytes, presentation: hexPresentation)
         }
     }
 }
@@ -290,8 +359,8 @@ actor RecordStore {
     static let defaultMaximumRecords = 50_000
     static let defaultMaximumBytes = 16 * 1_024 * 1_024
 
-    private let maximumRecords: Int
-    private let maximumBytes: Int
+    private var maximumRecords: Int
+    private var maximumBytes: Int
     private var records: [CommunicationRecord] = []
     private var storedByteCount = 0
     private var receivedByteCount = 0
@@ -325,6 +394,12 @@ actor RecordStore {
     func clear() {
         records.removeAll(keepingCapacity: true)
         storedByteCount = 0
+    }
+
+    func updateLimits(maximumRecords: Int, maximumBytes: Int) {
+        self.maximumRecords = max(1, maximumRecords)
+        self.maximumBytes = max(1, maximumBytes)
+        trimIfNeeded()
     }
 
     func statistics() -> RecordStatistics {
@@ -362,6 +437,9 @@ enum SafeFileName {
 }
 
 struct AppPreferences: Codable, Equatable {
+    static let currentSchemaVersion = 2
+
+    var schemaVersion = currentSchemaVersion
     var defaultConfiguration = SerialConfiguration(path: "")
     var receiveFormat: DisplayFormat = .ascii
     var sendFormat: DisplayFormat = .ascii
@@ -372,29 +450,134 @@ struct AppPreferences: Codable, Equatable {
     var logDirectoryPath: String?
     var logDirectoryBookmark: Data?
     var logFileNamePrefix = "serial-monitor"
+    var appearance: AppAppearance = .system
+    var fontScale: AppFontScale = .standard
+    var consoleFontSize: Double = 12
+    var consoleLineSpacing: ConsoleLineSpacing = .standard
+    var textEncoding: TextEncodingPreference = .utf8
+    var hexPresentation = HexPresentation()
+    var maximumRecords = RecordStore.defaultMaximumRecords
+    var maximumBytes = RecordStore.defaultMaximumBytes
+    var autoStartLogging = false
+    /// `nil` disables rotation; non-nil values are byte thresholds.
+    var logRotationMaximumBytes: Int?
+    var restoresLastConfiguration = true
+    var restoresSendDraft = true
+    var sendDraft = ""
+    var autoIntervalMilliseconds = 1_000
+    var autoRepetitionCountText = ""
+
+    enum CodingKeys: String, CodingKey {
+        case schemaVersion, defaultConfiguration, receiveFormat, sendFormat, lineEnding
+        case showsTimestamps, followsLatest, showsPresets, logDirectoryPath, logDirectoryBookmark, logFileNamePrefix
+        case appearance, fontScale, consoleFontSize, consoleLineSpacing, textEncoding, hexPresentation
+        case maximumRecords, maximumBytes, autoStartLogging, logRotationMaximumBytes
+        case restoresLastConfiguration, restoresSendDraft, sendDraft, autoIntervalMilliseconds, autoRepetitionCountText
+    }
+
+    init() {}
+
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        func decoded<T: Decodable>(_ type: T.Type, _ key: CodingKeys, default fallback: T) -> T {
+            (try? values.decodeIfPresent(type, forKey: key)) ?? fallback
+        }
+        schemaVersion = decoded(Int.self, .schemaVersion, default: 1)
+        defaultConfiguration = decoded(SerialConfiguration.self, .defaultConfiguration, default: SerialConfiguration(path: ""))
+        receiveFormat = decoded(DisplayFormat.self, .receiveFormat, default: .ascii)
+        sendFormat = decoded(DisplayFormat.self, .sendFormat, default: .ascii)
+        lineEnding = decoded(LineEnding.self, .lineEnding, default: .crlf)
+        showsTimestamps = decoded(Bool.self, .showsTimestamps, default: true)
+        followsLatest = decoded(Bool.self, .followsLatest, default: true)
+        showsPresets = decoded(Bool.self, .showsPresets, default: true)
+        logDirectoryPath = try? values.decodeIfPresent(String.self, forKey: .logDirectoryPath)
+        logDirectoryBookmark = try? values.decodeIfPresent(Data.self, forKey: .logDirectoryBookmark)
+        logFileNamePrefix = decoded(String.self, .logFileNamePrefix, default: "serial-monitor")
+        appearance = decoded(AppAppearance.self, .appearance, default: .system)
+        fontScale = decoded(AppFontScale.self, .fontScale, default: .standard)
+        consoleFontSize = decoded(Double.self, .consoleFontSize, default: 12)
+        consoleLineSpacing = decoded(ConsoleLineSpacing.self, .consoleLineSpacing, default: .standard)
+        textEncoding = decoded(TextEncodingPreference.self, .textEncoding, default: .utf8)
+        hexPresentation = decoded(HexPresentation.self, .hexPresentation, default: HexPresentation())
+        maximumRecords = decoded(Int.self, .maximumRecords, default: RecordStore.defaultMaximumRecords)
+        maximumBytes = decoded(Int.self, .maximumBytes, default: RecordStore.defaultMaximumBytes)
+        autoStartLogging = decoded(Bool.self, .autoStartLogging, default: false)
+        logRotationMaximumBytes = try? values.decodeIfPresent(Int.self, forKey: .logRotationMaximumBytes)
+        restoresLastConfiguration = decoded(Bool.self, .restoresLastConfiguration, default: true)
+        restoresSendDraft = decoded(Bool.self, .restoresSendDraft, default: true)
+        sendDraft = decoded(String.self, .sendDraft, default: "")
+        autoIntervalMilliseconds = decoded(Int.self, .autoIntervalMilliseconds, default: 1_000)
+        autoRepetitionCountText = decoded(String.self, .autoRepetitionCountText, default: "")
+        normalize()
+    }
+
+    mutating func normalize() {
+        schemaVersion = Self.currentSchemaVersion
+        consoleFontSize = min(18, max(10, consoleFontSize))
+        maximumRecords = [10_000, 50_000, 100_000, 200_000].min(by: { abs($0 - maximumRecords) < abs($1 - maximumRecords) }) ?? 50_000
+        maximumBytes = [4, 16, 64, 128].map { $0 * 1_024 * 1_024 }.min(by: { abs($0 - maximumBytes) < abs($1 - maximumBytes) }) ?? RecordStore.defaultMaximumBytes
+        if let limit = logRotationMaximumBytes, ![5, 20, 100].map({ $0 * 1_024 * 1_024 }).contains(limit) {
+            logRotationMaximumBytes = nil
+        }
+    }
+}
+
+struct LogDirectorySelection: Equatable {
+    let path: String
+    let bookmark: Data?
 }
 
 @MainActor
 final class PreferencesStore {
     private let defaults: UserDefaults
     private let key: String
+    private let backupDirectory: URL?
+    private let fileManager: FileManager
 
-    init(defaults: UserDefaults = .standard, key: String = "serial-monitor.preferences.v1") {
+    static var defaultBackupDirectory: URL? {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)
+            .first?
+            .appendingPathComponent("SerialMonitor/Recovered", isDirectory: true)
+    }
+
+    init(
+        defaults: UserDefaults = .standard,
+        key: String = "serial-monitor.preferences.v1",
+        backupDirectory: URL? = PreferencesStore.defaultBackupDirectory,
+        fileManager: FileManager = .default
+    ) {
         self.defaults = defaults
         self.key = key
+        self.backupDirectory = backupDirectory
+        self.fileManager = fileManager
     }
 
     func load() -> AppPreferences {
-        guard let data = defaults.data(forKey: key),
-              let preferences = try? JSONDecoder().decode(AppPreferences.self, from: data) else {
+        guard let data = defaults.data(forKey: key) else { return AppPreferences() }
+        guard let preferences = try? JSONDecoder().decode(AppPreferences.self, from: data) else {
+            backUpCorruptData(data)
             return AppPreferences()
         }
         return preferences
     }
 
+    private func backUpCorruptData(_ data: Data) {
+        guard let backupDirectory else { return }
+        try? fileManager.createDirectory(at: backupDirectory, withIntermediateDirectories: true)
+        let stamp = Int(Date().timeIntervalSince1970 * 1_000)
+        let name = "\(SafeFileName.sanitize(key))-\(stamp).json"
+        try? data.write(to: backupDirectory.appendingPathComponent(name))
+    }
+
     func save(_ preferences: AppPreferences) {
-        guard let data = try? JSONEncoder().encode(preferences) else { return }
+        var normalized = preferences
+        normalized.normalize()
+        guard let data = try? JSONEncoder().encode(normalized) else { return }
         defaults.set(data, forKey: key)
+    }
+
+    func reset() {
+        defaults.removeObject(forKey: key)
     }
 }
 
@@ -402,18 +585,42 @@ final class PreferencesStore {
 final class PresetStore {
     private let defaults: UserDefaults
     private let key: String
+    private let backupDirectory: URL?
+    private let fileManager: FileManager
 
-    init(defaults: UserDefaults = .standard, key: String = "serial-monitor.presets.v1") {
+    static var defaultBackupDirectory: URL? {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)
+            .first?
+            .appendingPathComponent("SerialMonitor/Recovered", isDirectory: true)
+    }
+
+    init(
+        defaults: UserDefaults = .standard,
+        key: String = "serial-monitor.presets.v1",
+        backupDirectory: URL? = PresetStore.defaultBackupDirectory,
+        fileManager: FileManager = .default
+    ) {
         self.defaults = defaults
         self.key = key
+        self.backupDirectory = backupDirectory
+        self.fileManager = fileManager
     }
 
     func load() -> [PresetSnapshot] {
-        guard let data = defaults.data(forKey: key),
-              let presets = try? JSONDecoder().decode([PresetSnapshot].self, from: data) else {
+        guard let data = defaults.data(forKey: key) else { return [] }
+        guard let presets = try? JSONDecoder().decode([PresetSnapshot].self, from: data) else {
+            backUpCorruptData(data)
             return []
         }
         return presets.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+
+    private func backUpCorruptData(_ data: Data) {
+        guard let backupDirectory else { return }
+        try? fileManager.createDirectory(at: backupDirectory, withIntermediateDirectories: true)
+        let stamp = Int(Date().timeIntervalSince1970 * 1_000)
+        let name = "\(SafeFileName.sanitize(key))-\(stamp).json"
+        try? data.write(to: backupDirectory.appendingPathComponent(name))
     }
 
     func save(_ presets: [PresetSnapshot]) {

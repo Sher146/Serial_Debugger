@@ -13,27 +13,41 @@ final class SessionViewModel: ObservableObject {
     @Published private(set) var autoSendStatus: AutoSendStatus = .inactive
     @Published private(set) var latestError: SessionError?
     @Published private(set) var presets: [PresetSnapshot] = []
-    @Published var configuration = SerialConfiguration(path: "") { didSet { persistPreferences() } }
-    @Published var receiveFormat: DisplayFormat = .ascii { didSet { persistPreferences() } }
-    @Published var showsTimestamps = true { didSet { persistPreferences() } }
-    @Published var followsLatest = true { didSet { persistPreferences() } }
-    @Published var showsPresets = true { didSet { persistPreferences() } }
+    @Published var configuration = SerialConfiguration(path: "") { didSet { persistIfNeeded() } }
+    @Published var receiveFormat: DisplayFormat = .ascii { didSet { persistIfNeeded() } }
+    @Published var showsTimestamps = true { didSet { persistIfNeeded() } }
+    @Published var followsLatest = true { didSet { persistIfNeeded() } }
+    @Published var showsPresets = true { didSet { persistIfNeeded() } }
+    @Published var appearance: AppAppearance = .system { didSet { persistIfNeeded() } }
+    @Published var fontScale: AppFontScale = .standard { didSet { persistIfNeeded() } }
+    @Published var consoleFontSize: Double = 12 { didSet { persistIfNeeded() } }
+    @Published var consoleLineSpacing: ConsoleLineSpacing = .standard { didSet { persistIfNeeded() } }
+    @Published var textEncoding: TextEncodingPreference = .utf8 { didSet { persistIfNeeded() } }
+    @Published var hexPresentation = HexPresentation() { didSet { persistIfNeeded() } }
+    @Published var maximumRecords = RecordStore.defaultMaximumRecords { didSet { persistIfNeeded(); applyRecordLimitsIfNeeded() } }
+    @Published var maximumBytes = RecordStore.defaultMaximumBytes { didSet { persistIfNeeded(); applyRecordLimitsIfNeeded() } }
+    @Published var autoStartLogging = false { didSet { persistIfNeeded() } }
+    @Published var logRotationMaximumBytes: Int? { didSet { persistIfNeeded() } }
+    @Published var restoresLastConfiguration = true { didSet { persistIfNeeded() } }
+    @Published var restoresSendDraft = true { didSet { persistIfNeeded() } }
     @Published var isPaused = false
-    @Published var sendText = ""
-    @Published var sendFormat: DisplayFormat = .ascii { didSet { persistPreferences() } }
-    @Published var lineEnding: LineEnding = .crlf { didSet { persistPreferences() } }
-    @Published var autoIntervalMilliseconds = 1_000
-    @Published var autoRepetitionCountText = ""
-    @Published var logFileNamePrefix = "serial-monitor" { didSet { persistPreferences() } }
+    @Published var sendText = "" { didSet { persistIfNeeded() } }
+    @Published var sendFormat: DisplayFormat = .ascii { didSet { persistIfNeeded() } }
+    @Published var lineEnding: LineEnding = .crlf { didSet { persistIfNeeded() } }
+    @Published var autoIntervalMilliseconds = 1_000 { didSet { persistIfNeeded() } }
+    @Published var autoRepetitionCountText = "" { didSet { persistIfNeeded() } }
+    @Published var logFileNamePrefix = "serial-monitor" { didSet { persistIfNeeded() } }
     @Published private(set) var sendValidationError: ValidationError?
 
     private let client: any SessionClient
     private let preferencesStore: PreferencesStore
     private let presetStore: PresetStore
     private var subscriptionTask: Task<Void, Never>?
+    private var sendValidationCancellable: AnyCancellable?
     private var pausedRecordEvents: [CommunicationRecord] = []
     private var activeSecurityScopedDirectory: URL?
     private var activePresetID: UUID?
+    private var isApplyingSettings = false
 
     init(
         client: any SessionClient,
@@ -44,7 +58,7 @@ final class SessionViewModel: ObservableObject {
         self.preferencesStore = preferencesStore
         self.presetStore = presetStore
         let preferences = preferencesStore.load()
-        configuration = preferences.defaultConfiguration
+        configuration = preferences.restoresLastConfiguration ? preferences.defaultConfiguration : SerialConfiguration(path: "")
         receiveFormat = preferences.receiveFormat
         sendFormat = preferences.sendFormat
         lineEnding = preferences.lineEnding
@@ -52,6 +66,23 @@ final class SessionViewModel: ObservableObject {
         followsLatest = preferences.followsLatest
         showsPresets = preferences.showsPresets
         logFileNamePrefix = preferences.logFileNamePrefix
+        appearance = preferences.appearance
+        fontScale = preferences.fontScale
+        consoleFontSize = preferences.consoleFontSize
+        consoleLineSpacing = preferences.consoleLineSpacing
+        textEncoding = preferences.textEncoding
+        hexPresentation = preferences.hexPresentation
+        maximumRecords = preferences.maximumRecords
+        maximumBytes = preferences.maximumBytes
+        autoStartLogging = preferences.autoStartLogging
+        logRotationMaximumBytes = preferences.logRotationMaximumBytes
+        restoresLastConfiguration = preferences.restoresLastConfiguration
+        restoresSendDraft = preferences.restoresSendDraft
+        if preferences.restoresSendDraft {
+            sendText = preferences.sendDraft
+            autoIntervalMilliseconds = preferences.autoIntervalMilliseconds
+            autoRepetitionCountText = preferences.autoRepetitionCountText
+        }
         presets = presetStore.load()
         subscriptionTask = Task { [weak self, client] in
             let stream = await client.subscribe()
@@ -60,6 +91,12 @@ final class SessionViewModel: ObservableObject {
                 self?.consume(event)
             }
         }
+        sendValidationCancellable = Publishers.CombineLatest($sendText, $sendFormat)
+            .dropFirst()
+            .debounce(for: .milliseconds(50), scheduler: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.validateSendText()
+            }
     }
 
     deinit {
@@ -81,7 +118,7 @@ final class SessionViewModel: ObservableObject {
 
     var canSend: Bool {
         guard isConnected else { return false }
-        return (try? SendPayloadEncoder.encode(text: sendText, format: sendFormat, lineEnding: lineEnding)) != nil
+        return (try? SendPayloadEncoder.encode(text: sendText, format: sendFormat, lineEnding: lineEnding, textEncoding: textEncoding)) != nil
     }
 
     var isAutoSending: Bool {
@@ -99,7 +136,10 @@ final class SessionViewModel: ObservableObject {
         }
     }
 
-    func start() { refreshPorts() }
+    func start() {
+        applyRecordLimits()
+        refreshPorts()
+    }
 
     func shutdown() {
         Task {
@@ -128,7 +168,7 @@ final class SessionViewModel: ObservableObject {
 
     func sendCurrentText() {
         do {
-            let request = try SendPayloadEncoder.encode(text: sendText, format: sendFormat, lineEnding: lineEnding)
+            let request = try SendPayloadEncoder.encode(text: sendText, format: sendFormat, lineEnding: lineEnding, textEncoding: textEncoding)
             sendValidationError = nil
             Task { await client.send(request) }
         } catch let error as ValidationError {
@@ -144,6 +184,7 @@ final class SessionViewModel: ObservableObject {
                 text: sendText,
                 format: sendFormat,
                 lineEnding: lineEnding,
+                textEncoding: textEncoding,
                 source: .autoSend
             )
             let schedule = try AutoSendSchedule(
@@ -201,7 +242,7 @@ final class SessionViewModel: ObservableObject {
             return .invalidSetting("预设名称已存在")
         }
         do {
-            _ = try SendPayloadEncoder.encode(text: content, format: format, lineEnding: lineEnding)
+            _ = try SendPayloadEncoder.encode(text: content, format: format, lineEnding: lineEnding, textEncoding: textEncoding)
         } catch let error as ValidationError {
             return error
         } catch {
@@ -230,7 +271,7 @@ final class SessionViewModel: ObservableObject {
             return
         }
         guard let directory = chooseLogDirectory() else { return }
-        let configuration = LogConfiguration(directory: directory, fileNamePrefix: logFileNamePrefix)
+        let configuration = LogConfiguration(directory: directory, fileNamePrefix: logFileNamePrefix, rotationMaximumBytes: logRotationMaximumBytes)
         Task { await client.startLogging(configuration: configuration) }
     }
 
@@ -240,7 +281,7 @@ final class SessionViewModel: ObservableObject {
             return
         }
         do {
-            _ = try SendPayloadEncoder.encode(text: sendText, format: sendFormat, lineEnding: lineEnding)
+            _ = try SendPayloadEncoder.encode(text: sendText, format: sendFormat, lineEnding: lineEnding, textEncoding: textEncoding)
             sendValidationError = nil
         } catch let error as ValidationError {
             sendValidationError = error
@@ -274,6 +315,9 @@ final class SessionViewModel: ObservableObject {
         case .stateChanged(let state):
             sessionState = state
             if let activeConfiguration = state.configuration { configuration = activeConfiguration }
+            if case .connected = state, autoStartLogging, case .inactive = logStatus {
+                startAutomaticLoggingIfPossible()
+            }
         case .recordsAppended(let records):
             if isPaused {
                 pausedRecordEvents.append(contentsOf: records)
@@ -312,12 +356,13 @@ final class SessionViewModel: ObservableObject {
             text: preset.content,
             format: preset.format,
             lineEnding: preset.lineEnding,
+            textEncoding: textEncoding,
             source: .preset,
             presetSnapshot: preset
         )
     }
 
-    private func persistPreferences() {
+    func settingsDraft() -> AppPreferences {
         var preferences = preferencesStore.load()
         preferences.defaultConfiguration = configuration
         preferences.receiveFormat = receiveFormat
@@ -327,7 +372,103 @@ final class SessionViewModel: ObservableObject {
         preferences.followsLatest = followsLatest
         preferences.showsPresets = showsPresets
         preferences.logFileNamePrefix = SafeFileName.sanitize(logFileNamePrefix)
+        preferences.appearance = appearance
+        preferences.fontScale = fontScale
+        preferences.consoleFontSize = consoleFontSize
+        preferences.consoleLineSpacing = consoleLineSpacing
+        preferences.textEncoding = textEncoding
+        preferences.hexPresentation = hexPresentation
+        preferences.maximumRecords = maximumRecords
+        preferences.maximumBytes = maximumBytes
+        preferences.autoStartLogging = autoStartLogging
+        preferences.logRotationMaximumBytes = logRotationMaximumBytes
+        preferences.restoresLastConfiguration = restoresLastConfiguration
+        preferences.restoresSendDraft = restoresSendDraft
+        preferences.sendDraft = sendText
+        preferences.autoIntervalMilliseconds = autoIntervalMilliseconds
+        preferences.autoRepetitionCountText = autoRepetitionCountText
+        return preferences
+    }
+
+    func applySettings(_ draft: AppPreferences) {
+        var preferences = draft
+        preferences.normalize()
+        let previousDirectoryBookmark = preferencesStore.load().logDirectoryBookmark
+        isApplyingSettings = true
+        configuration = preferences.defaultConfiguration
+        receiveFormat = preferences.receiveFormat
+        sendFormat = preferences.sendFormat
+        lineEnding = preferences.lineEnding
+        showsTimestamps = preferences.showsTimestamps
+        followsLatest = preferences.followsLatest
+        showsPresets = preferences.showsPresets
+        logFileNamePrefix = preferences.logFileNamePrefix
+        appearance = preferences.appearance
+        fontScale = preferences.fontScale
+        consoleFontSize = preferences.consoleFontSize
+        consoleLineSpacing = preferences.consoleLineSpacing
+        textEncoding = preferences.textEncoding
+        hexPresentation = preferences.hexPresentation
+        maximumRecords = preferences.maximumRecords
+        maximumBytes = preferences.maximumBytes
+        autoStartLogging = preferences.autoStartLogging
+        logRotationMaximumBytes = preferences.logRotationMaximumBytes
+        restoresLastConfiguration = preferences.restoresLastConfiguration
+        restoresSendDraft = preferences.restoresSendDraft
+        sendText = preferences.sendDraft
+        autoIntervalMilliseconds = preferences.autoIntervalMilliseconds
+        autoRepetitionCountText = preferences.autoRepetitionCountText
+        isApplyingSettings = false
         preferencesStore.save(preferences)
+        applyRecordLimits()
+        if previousDirectoryBookmark != preferences.logDirectoryBookmark, !isLogging {
+            stopSecurityScopedDirectoryAccess()
+        }
+    }
+
+    func logDirectoryDescription(for preferences: AppPreferences) -> String {
+        preferences.logDirectoryPath ?? "尚未选择（开始记录时询问）"
+    }
+
+    func selectSettingsLogDirectory() -> LogDirectorySelection? {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.canCreateDirectories = true
+        panel.prompt = "选择日志目录"
+        guard panel.runModal() == .OK, let url = panel.url else { return nil }
+        return LogDirectorySelection(
+            path: url.path,
+            bookmark: try? url.bookmarkData(options: [.withSecurityScope], includingResourceValuesForKeys: nil, relativeTo: nil)
+        )
+    }
+
+    private func applyRecordLimits() {
+        Task { await client.updateRecordLimits(maximumRecords: maximumRecords, maximumBytes: maximumBytes) }
+    }
+
+    private func persistIfNeeded() {
+        guard !isApplyingSettings else { return }
+        preferencesStore.save(settingsDraft())
+    }
+
+    private func applyRecordLimitsIfNeeded() {
+        guard !isApplyingSettings else { return }
+        applyRecordLimits()
+    }
+
+    private var isLogging: Bool {
+        if case .recording = logStatus { return true }
+        return false
+    }
+
+    private func startAutomaticLoggingIfPossible() {
+        guard let directory = resolvedLogDirectory() else {
+            latestError = .validation(.invalidSetting("已开启自动记录，请先在设置中选择日志目录"))
+            return
+        }
+        let configuration = LogConfiguration(directory: directory, fileNamePrefix: logFileNamePrefix, rotationMaximumBytes: logRotationMaximumBytes)
+        Task { await client.startLogging(configuration: configuration) }
     }
 
     private func chooseLogDirectory() -> URL? {

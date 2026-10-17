@@ -3,10 +3,12 @@ import Foundation
 struct LogConfiguration: Sendable, Equatable {
     let directory: URL
     let fileNamePrefix: String
+    let rotationMaximumBytes: Int?
 
-    init(directory: URL, fileNamePrefix: String = "serial-monitor") {
+    init(directory: URL, fileNamePrefix: String = "serial-monitor", rotationMaximumBytes: Int? = nil) {
         self.directory = directory
         self.fileNamePrefix = SafeFileName.sanitize(fileNamePrefix)
+        self.rotationMaximumBytes = rotationMaximumBytes
     }
 }
 
@@ -31,34 +33,55 @@ actor NullLogService: LogServicing {
 actor FileLogService: LogServicing {
     private var handle: FileHandle?
     private var status: LogStatus = .inactive
+    private var configuration: LogConfiguration?
+    private var fileStem = ""
+    private var rotationIndex = 0
+    private var currentFileBytes = 0
 
     func start(configuration: LogConfiguration) async {
         await flushAndClose()
+        self.configuration = configuration
+        rotationIndex = 0
         do {
             try FileManager.default.createDirectory(at: configuration.directory, withIntermediateDirectories: true)
             let formatter = ISO8601DateFormatter()
             formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
             let stamp = formatter.string(from: Date()).replacingOccurrences(of: ":", with: "-")
-            let url = configuration.directory.appendingPathComponent("\(configuration.fileNamePrefix)-\(stamp).ndjson")
-            FileManager.default.createFile(atPath: url.path, contents: nil)
-            handle = try FileHandle(forWritingTo: url)
+            fileStem = "\(configuration.fileNamePrefix)-\(stamp)"
+            try openNextFile()
             status = .recording
         } catch {
             handle = nil
+            self.configuration = nil
             status = .failed(error.localizedDescription)
         }
     }
 
     func append(_ record: CommunicationRecord) async {
-        guard let handle else { return }
+        guard handle != nil else { return }
         do {
             let entry = NDJSONLogEntry(record: record)
             let encoder = JSONEncoder()
             encoder.dateEncodingStrategy = .iso8601
             let data = try encoder.encode(entry) + Data([0x0A])
-            try handle.write(contentsOf: data)
+            if let limit = configuration?.rotationMaximumBytes,
+               currentFileBytes > 0,
+               currentFileBytes + data.count > limit {
+                if let activeHandle = self.handle {
+                    try activeHandle.close()
+                }
+                self.handle = nil
+                rotationIndex += 1
+                try openNextFile()
+            }
+            if let activeHandle = self.handle {
+                try activeHandle.write(contentsOf: data)
+            }
+            currentFileBytes += data.count
         } catch {
-            try? handle.close()
+            if let activeHandle = self.handle {
+                try? activeHandle.close()
+            }
             self.handle = nil
             status = .failed(error.localizedDescription)
         }
@@ -74,9 +97,19 @@ actor FileLogService: LogServicing {
         try? handle.synchronize()
         try? handle.close()
         self.handle = nil
+        currentFileBytes = 0
     }
 
     func currentStatus() async -> LogStatus { status }
+
+    private func openNextFile() throws {
+        guard let configuration else { return }
+        let suffix = rotationIndex == 0 ? "" : String(format: "-%03d", rotationIndex)
+        let url = configuration.directory.appendingPathComponent("\(fileStem)\(suffix).ndjson")
+        FileManager.default.createFile(atPath: url.path, contents: nil)
+        handle = try FileHandle(forWritingTo: url)
+        currentFileBytes = 0
+    }
 }
 
 private struct NDJSONLogEntry: Encodable {

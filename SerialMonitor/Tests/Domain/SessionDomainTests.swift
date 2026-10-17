@@ -3,6 +3,41 @@ import SerialCore
 @testable import SerialMonitor
 
 final class SessionDomainTests: XCTestCase {
+    @MainActor
+    func testPreferencesMigrateLegacyPayloadWithoutDiscardingValues() throws {
+        let defaults = UserDefaults(suiteName: "serial-monitor-preferences-migration-\(UUID().uuidString)")!
+        let key = "legacy"
+        let legacy = """
+        {"defaultConfiguration":{"path":"/dev/cu.legacy","baudRate":57600,"dataBits":8,"parity":"none","stopBits":1,"flowControl":"none"},"receiveFormat":"hex","sendFormat":"ascii","lineEnding":"lf","showsTimestamps":false,"followsLatest":true,"showsPresets":false,"logFileNamePrefix":"legacy-log"}
+        """
+        defaults.set(Data(legacy.utf8), forKey: key)
+
+        let preferences = PreferencesStore(defaults: defaults, key: key).load()
+
+        XCTAssertEqual(preferences.defaultConfiguration.path, "/dev/cu.legacy")
+        XCTAssertEqual(preferences.receiveFormat, .hex)
+        XCTAssertEqual(preferences.logFileNamePrefix, "legacy-log")
+        XCTAssertEqual(preferences.appearance, .system)
+        XCTAssertEqual(preferences.maximumRecords, RecordStore.defaultMaximumRecords)
+    }
+
+    func testTextEncodingsAndHexPresentationAreApplied() {
+        let text = "串口"
+        let gbData = TextPayloadCodec.encode(text, encoding: .gb18030)
+        XCTAssertEqual(TextPayloadCodec.decodeForDisplay(gbData, encoding: .gb18030), text)
+        XCTAssertEqual(HexCodec.encode(Data([0xAB, 0x01]), presentation: HexPresentation(separator: .comma, usesUppercase: false)), "ab,01")
+    }
+
+    func testRecordStoreAppliesNewLimitsImmediately() async {
+        let store = RecordStore(maximumRecords: 10, maximumBytes: 100)
+        await store.append(CommunicationRecord(direction: .received, rawBytes: Data([1]), displayFormat: .hex))
+        await store.append(CommunicationRecord(direction: .received, rawBytes: Data([2]), displayFormat: .hex))
+        await store.updateLimits(maximumRecords: 1, maximumBytes: 10)
+
+        let records = await store.allRecords()
+        XCTAssertEqual(records.count, 1)
+        XCTAssertEqual(records.first?.rawBytes, Data([2]))
+    }
     func testBaudRateCatalogContainsAllStandardAndCommonHighSpeedRates() {
         XCTAssertEqual(BaudRateCatalog.standardRates.first, 50)
         XCTAssertEqual(BaudRateCatalog.standardRates.last, 230_400)
@@ -106,5 +141,107 @@ final class SessionDomainTests: XCTestCase {
         let contents = try String(contentsOf: file, encoding: .utf8)
         XCTAssertTrue(contents.contains("\"rawHex\":\"41 0D\""))
         XCTAssertTrue(contents.contains("\"state\":\"sent\""))
+    }
+
+    func testFileLogServiceRotatesUsingIncrementingSuffix() async throws {
+        let directory = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("serial-monitor-log-rotation-\(UUID().uuidString)", isDirectory: true)
+        let logger = FileLogService()
+        await logger.start(configuration: LogConfiguration(directory: directory, fileNamePrefix: "rotate", rotationMaximumBytes: 10))
+        await logger.append(CommunicationRecord(direction: .received, rawBytes: Data(repeating: 0xAB, count: 20), displayFormat: .hex))
+        await logger.append(CommunicationRecord(direction: .received, rawBytes: Data(repeating: 0xCD, count: 20), displayFormat: .hex))
+        await logger.stop()
+
+        let names = try FileManager.default.contentsOfDirectory(atPath: directory.path).sorted()
+        XCTAssertEqual(names.count, 2)
+        XCTAssertTrue(names.contains(where: { $0.contains("-001.ndjson") }))
+    }
+
+    @MainActor
+    func testCorruptPreferencesAreBackedUpThenFallBackToDefaults() throws {
+        let suite = "serial-monitor-corrupt-preferences-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        let backupDirectory = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("serial-monitor-recovered-\(UUID().uuidString)", isDirectory: true)
+        let key = "preferences"
+        let corrupt = Data("not-json".utf8)
+        defaults.set(corrupt, forKey: key)
+
+        let store = PreferencesStore(defaults: defaults, key: key, backupDirectory: backupDirectory)
+        let preferences = store.load()
+
+        XCTAssertEqual(preferences, AppPreferences())
+        let backups = try FileManager.default.contentsOfDirectory(at: backupDirectory, includingPropertiesForKeys: nil)
+        XCTAssertEqual(backups.count, 1)
+        XCTAssertEqual(try Data(contentsOf: backups[0]), corrupt)
+    }
+
+    @MainActor
+    func testCorruptPresetsAreBackedUpThenFallBackToEmpty() throws {
+        let suite = "serial-monitor-corrupt-presets-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        let backupDirectory = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("serial-monitor-recovered-\(UUID().uuidString)", isDirectory: true)
+        let key = "presets"
+        defaults.set(Data("{broken".utf8), forKey: key)
+
+        let store = PresetStore(defaults: defaults, key: key, backupDirectory: backupDirectory)
+
+        XCTAssertEqual(store.load(), [])
+        let backups = try FileManager.default.contentsOfDirectory(at: backupDirectory, includingPropertiesForKeys: nil)
+        XCTAssertEqual(backups.count, 1)
+    }
+
+    func testAutoSendScheduleRejectsSubMinimumIntervalAndZeroRepetition() throws {
+        let request = SendRequest(payload: Data([0x41]), displayFormat: .ascii)
+        XCTAssertThrowsError(try AutoSendSchedule(request: request, intervalMilliseconds: 9, repetitionCount: nil)) { error in
+            XCTAssertEqual(error as? ValidationError, .invalidInterval)
+        }
+        XCTAssertNoThrow(try AutoSendSchedule(request: request, intervalMilliseconds: 10, repetitionCount: nil))
+        XCTAssertThrowsError(try AutoSendSchedule(request: request, intervalMilliseconds: 10, repetitionCount: 0)) { error in
+            XCTAssertEqual(error as? ValidationError, .invalidSetting("发送次数必须大于 0"))
+        }
+    }
+
+    func testSendEncoderAppliesTextEncodingAndLineEndingMatrix() throws {
+        let gb = try SendPayloadEncoder.encode(text: "串口", format: .ascii, lineEnding: .lf, textEncoding: .gb18030)
+        XCTAssertEqual(gb.payload, TextPayloadCodec.encode("串口", encoding: .gb18030) + Data([0x0A]))
+        XCTAssertEqual(gb.displayFormat, .ascii)
+
+        let hex = try SendPayloadEncoder.encode(text: "01 02", format: .hex, lineEnding: .cr, source: .autoSend)
+        XCTAssertEqual(hex.payload, Data([0x01, 0x02, 0x0D]))
+        XCTAssertEqual(hex.source, .autoSend)
+
+        XCTAssertThrowsError(try SendPayloadEncoder.encode(text: "", format: .ascii, lineEnding: .none)) { error in
+            XCTAssertEqual(error as? ValidationError, .emptyPayload)
+        }
+    }
+
+    func testConsoleProjectionPerformance() {
+        let data = Data(repeating: 0xAB, count: 64 * 1_024)
+        let record = CommunicationRecord(direction: .received, rawBytes: data, displayFormat: .hex)
+        measure {
+            _ = HexCodec.encode(data)
+            _ = try? HexCodec.decode(HexCodec.encode(data))
+            _ = RecordFormatter.string(for: record, format: .ascii)
+        }
+    }
+
+    func testFileLogServiceIsolatesAppendFailureFromCaller() async throws {
+        let blocker = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("serial-monitor-log-blocker-\(UUID().uuidString)")
+        try Data("block".utf8).write(to: blocker)
+        let logger = FileLogService()
+
+        await logger.start(configuration: LogConfiguration(directory: blocker, fileNamePrefix: "test"))
+        guard case .failed = await logger.currentStatus() else {
+            return XCTFail("Expected logging to fail when the directory is a regular file")
+        }
+
+        await logger.append(CommunicationRecord(direction: .received, rawBytes: Data([0x01]), displayFormat: .hex))
+        guard case .failed = await logger.currentStatus() else {
+            return XCTFail("Append failure must not recover or crash the logger")
+        }
+        await logger.stop()
     }
 }

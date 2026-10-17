@@ -23,6 +23,7 @@ struct SessionView: View {
         .toolbar { SessionToolbarContent(model: model) }
         .task { model.start() }
         .onDisappear { model.shutdown() }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("session.workspace")
     }
 
@@ -261,7 +262,8 @@ private struct ReceiveConsole: View {
 
             if model.isPaused {
                 HStack {
-                    Label(L10n.pausedBanner, systemImage: "pause.circle.fill")
+                    Image(systemName: "pause.circle.fill")
+                    Text(L10n.pausedBanner)
                     Spacer()
                     Button(L10n.resume) { model.togglePause() }
                 }
@@ -271,6 +273,7 @@ private struct ReceiveConsole: View {
                 .padding(.vertical, 6)
                 .background(Color.sessionAttention.opacity(0.1))
                 .zIndex(1)
+                .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("console.paused-banner")
             }
 
@@ -288,7 +291,15 @@ private struct ReceiveConsole: View {
                             .frame(maxWidth: .infinity, minHeight: 280)
                         } else {
                             ForEach(model.visibleRecords) { record in
-                                ConsoleRecordRow(record: record, format: model.receiveFormat, showsTimestamp: model.showsTimestamps)
+                                ConsoleRecordRow(
+                                    record: record,
+                                    format: model.receiveFormat,
+                                    showsTimestamp: model.showsTimestamps,
+                                    textEncoding: model.textEncoding,
+                                    hexPresentation: model.hexPresentation,
+                                    fontSize: model.consoleFontSize,
+                                    lineSpacing: model.consoleLineSpacing.points
+                                )
                                     .id(record.id)
                             }
                         }
@@ -307,6 +318,7 @@ private struct ReceiveConsole: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("console.records")
     }
 }
@@ -330,21 +342,23 @@ private struct ConsoleToolbar: View {
                     .help(L10n.clear)
             }
             ToolbarSeparator()
-            ControlGroup {
-                Picker("", selection: $model.receiveFormat) {
-                    Text("ASCII").tag(DisplayFormat.ascii)
-                    Text("HEX").tag(DisplayFormat.hex)
-                }
-                .pickerStyle(.segmented)
-                .frame(width: 112)
-                .accessibilityLabel("接收显示格式")
-                .accessibilityIdentifier("console.display-format")
-                Toggle(L10n.timestamp, isOn: $model.showsTimestamps).toggleStyle(.button)
-                    .accessibilityIdentifier("console.timestamps")
-                Toggle(L10n.follow, isOn: $model.followsLatest).toggleStyle(.button)
-                    .accessibilityIdentifier("console.follow")
+            Picker("", selection: $model.receiveFormat) {
+                Text("ASCII").tag(DisplayFormat.ascii)
+                Text("HEX").tag(DisplayFormat.hex)
             }
+            .pickerStyle(.segmented)
+            .frame(width: 112)
             .controlSize(.large)
+            .accessibilityLabel("接收显示格式")
+            .accessibilityIdentifier("console.display-format")
+            Toggle(L10n.timestamp, isOn: $model.showsTimestamps)
+                .toggleStyle(.button)
+                .controlSize(.large)
+                .accessibilityIdentifier("console.timestamps")
+            Toggle(L10n.follow, isOn: $model.followsLatest)
+                .toggleStyle(.button)
+                .controlSize(.large)
+                .accessibilityIdentifier("console.follow")
             Spacer()
             Text("\(model.visibleRecords.count) 条")
                 .foregroundStyle(.secondary)
@@ -360,6 +374,10 @@ private struct ConsoleRecordRow: View {
     let record: CommunicationRecord
     let format: DisplayFormat
     let showsTimestamp: Bool
+    let textEncoding: TextEncodingPreference
+    let hexPresentation: HexPresentation
+    let fontSize: Double
+    let lineSpacing: CGFloat
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: DesignTokens.compactSpacing) {
@@ -370,7 +388,7 @@ private struct ConsoleRecordRow: View {
             Text(record.direction.rawValue)
                 .foregroundStyle(record.direction == .received ? Color.sessionConnected : Color.accentColor)
                 .fontWeight(.semibold)
-            Text(RecordFormatter.string(for: record, format: format))
+            Text(RecordFormatter.string(for: record, format: format, textEncoding: textEncoding, hexPresentation: hexPresentation))
                 .textSelection(.enabled)
             if case .failed(let error)? = record.sendResult {
                 Image(systemName: "exclamationmark.triangle.fill")
@@ -378,11 +396,13 @@ private struct ConsoleRecordRow: View {
                     .help(error.localizedDescription)
             }
         }
-        .font(DesignTokens.consoleFont)
+        .font(.system(size: fontSize, weight: .regular, design: .monospaced))
+        .lineSpacing(lineSpacing)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, DesignTokens.standardSpacing)
         .padding(.vertical, 1)
-        .accessibilityLabel("\(record.direction.rawValue) \(RecordFormatter.string(for: record, format: format))")
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(record.direction.rawValue) \(RecordFormatter.string(for: record, format: format, textEncoding: textEncoding, hexPresentation: hexPresentation))")
         .accessibilityIdentifier(recordAccessibilityIdentifier)
     }
 
@@ -407,7 +427,6 @@ private struct SendEditor: View {
                 }
                 .pickerStyle(.segmented)
                 .frame(width: 130)
-                .onChange(of: model.sendFormat) { _, _ in model.validateSendText() }
                 .accessibilityLabel("发送格式")
                 .accessibilityIdentifier("send.format")
                 Picker(L10n.lineEnding, selection: $model.lineEnding) {
@@ -428,7 +447,7 @@ private struct SendEditor: View {
 
             HStack(alignment: .bottom, spacing: DesignTokens.standardSpacing) {
                 TextEditor(text: $model.sendText)
-                    .font(DesignTokens.consoleFont)
+                    .font(.system(size: model.consoleFontSize, weight: .regular, design: .monospaced))
                     .focused($editorFocused)
                     .scrollContentBackground(.hidden)
                     .padding(.horizontal, 6)
@@ -448,7 +467,6 @@ private struct SendEditor: View {
                         }
                     }
                     .disabled(!model.isConnected)
-                    .onChange(of: model.sendText) { _, _ in model.validateSendText() }
                     .accessibilityLabel(L10n.send)
                     .accessibilityIdentifier("send.editor")
 
@@ -502,6 +520,7 @@ private struct SendEditor: View {
             }
         }
         .background(Color.consoleSurface)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("send.editor-container")
     }
 }
@@ -553,19 +572,22 @@ private struct PresetInspector: View {
                             }
                             .disabled(!model.isConnected && !model.isAutoSending)
                             Button("编辑") { editor = PresetEditorState(preset: preset) }
+                            Button("删除", role: .destructive) { model.deletePreset(preset) }
+                                .accessibilityIdentifier("presets.delete.\(preset.id.uuidString)")
                         }
                         .buttonStyle(.borderless)
                     }
                     .contextMenu {
                         Button("删除", role: .destructive) { model.deletePreset(preset) }
                     }
-                    .accessibilityIdentifier("presets.item.\(preset.id.uuidString)")
+                    .accessibilityElement(children: .contain)
                 }
                 .listStyle(.plain)
             }
         }
         .frame(maxHeight: .infinity, alignment: .top)
         .background(.bar)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("presets.inspector")
         .sheet(item: $editor) { state in
             PresetEditorSheet(state: state, model: model)
@@ -662,6 +684,8 @@ private struct SessionStatusBar: View {
             Spacer()
             Label(logTitle, systemImage: "record.circle")
                 .foregroundStyle(logColor)
+                .accessibilityIdentifier("status.log")
+                .accessibilityValue(logStateValue)
             if let error = model.latestError {
                 Divider()
                 Label(error.localizedDescription, systemImage: "exclamationmark.triangle.fill")
@@ -674,6 +698,7 @@ private struct SessionStatusBar: View {
         .padding(.horizontal, DesignTokens.standardSpacing)
         .frame(height: 26)
         .background(.bar)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("session.status-bar")
     }
 
@@ -694,6 +719,14 @@ private struct SessionStatusBar: View {
         if case .recording = model.logStatus { return .sessionConnected }
         if case .failed = model.logStatus { return .sessionError }
         return .secondary
+    }
+
+    private var logStateValue: String {
+        switch model.logStatus {
+        case .inactive: "inactive"
+        case .recording: "recording"
+        case .failed: "failed"
+        }
     }
 
     private func formattedBytes(_ count: Int) -> String {
