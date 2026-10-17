@@ -9,6 +9,7 @@ actor SessionCoordinator: SessionClient {
     private let txQueue = TXSendQueue()
     private let clock = ContinuousClock()
     private let writeTimeout: Duration
+    private let portPollInterval: Duration
 
     private var stateMachine = SessionStateMachine()
     private var ports: [SerialPortDescriptor] = []
@@ -18,6 +19,7 @@ actor SessionCoordinator: SessionClient {
     private var connectionEventTask: Task<Void, Never>?
     private var txPumpTask: Task<Void, Never>?
     private var autoSendTask: Task<Void, Never>?
+    private var portMonitorTask: Task<Void, Never>?
     private var autoSendID = UUID()
     private var autoSendStatus: AutoSendStatus = .inactive
     private var sendContinuations: [UUID: CheckedContinuation<SendResult, Never>] = [:]
@@ -28,12 +30,14 @@ actor SessionCoordinator: SessionClient {
         serialPort: any SerialPorting,
         recordStore: RecordStore = RecordStore(),
         logService: any LogServicing = NullLogService(),
-        writeTimeout: Duration = .seconds(2)
+        writeTimeout: Duration = .seconds(2),
+        portPollInterval: Duration = .milliseconds(1_200)
     ) {
         self.serialPort = serialPort
         self.recordStore = recordStore
         self.logService = logService
         self.writeTimeout = writeTimeout
+        self.portPollInterval = portPollInterval
     }
 
     func subscribe() async -> AsyncStream<SessionEvent> {
@@ -52,6 +56,25 @@ actor SessionCoordinator: SessionClient {
     func refreshPorts() async {
         ports = await serialPort.availablePorts()
         await eventHub.publish(.portsChanged(ports))
+        startPortMonitoringIfNeeded()
+    }
+
+    private func startPortMonitoringIfNeeded() {
+        guard portMonitorTask == nil else { return }
+        portMonitorTask = Task { [weak self, portPollInterval] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: portPollInterval)
+                guard !Task.isCancelled else { return }
+                await self?.pollPortsOnce()
+            }
+        }
+    }
+
+    private func pollPortsOnce() async {
+        let latest = await serialPort.availablePorts()
+        guard latest != ports else { return }
+        ports = latest
+        await eventHub.publish(.portsChanged(latest))
     }
 
     func connect(configuration: SerialConfiguration) async {
@@ -164,10 +187,14 @@ actor SessionCoordinator: SessionClient {
     }
 
     func shutdown() async {
+        portMonitorTask?.cancel()
+        portMonitorTask = nil
         await disconnect()
     }
 
     func currentState() -> SessionState { stateMachine.state }
+
+    func portsSnapshot() -> [SerialPortDescriptor] { ports }
 
     func recordsSnapshot() async -> [CommunicationRecord] { await recordStore.allRecords() }
 

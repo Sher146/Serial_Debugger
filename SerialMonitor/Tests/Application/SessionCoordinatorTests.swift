@@ -262,6 +262,19 @@ final class SessionCoordinatorTests: XCTestCase {
         XCTAssertEqual(shutdownAutoSend, .inactive)
     }
 
+    func testPortMonitorPublishesWhenPortsChange() async throws {
+        let serial = MockSerialPort()
+        let coordinator = SessionCoordinator(serialPort: serial, portPollInterval: .milliseconds(20))
+        await coordinator.refreshPorts()
+
+        await serial.setPorts([SerialPortDescriptor(path: "/dev/cu.hotplugged")])
+
+        try await waitUntil(timeout: .seconds(2)) {
+            await coordinator.portsSnapshot().contains { $0.path == "/dev/cu.hotplugged" }
+        }
+        await coordinator.shutdown()
+    }
+
     private func waitUntil(
         timeout: Duration = .seconds(1),
         condition: @escaping @Sendable () async -> Bool

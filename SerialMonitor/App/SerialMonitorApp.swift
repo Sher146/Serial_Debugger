@@ -25,6 +25,12 @@ struct SerialMonitorApp: App {
             testPreferences.logDirectoryPath = FileManager.default.temporaryDirectory
                 .appendingPathComponent("serial-monitor-ui-test-logs", isDirectory: true)
                 .path
+            let arguments = ProcessInfo.processInfo.arguments
+            if let index = arguments.firstIndex(of: "-ui-testing-font-scale"),
+               arguments.indices.contains(index + 1),
+               let scale = AppFontScale(rawValue: arguments[index + 1]) {
+                testPreferences.fontScale = scale
+            }
             preferencesStore.save(testPreferences)
         } else {
             client = SessionCoordinator(serialPort: POSIXSerialPortAdapter(), logService: FileLogService())
@@ -38,7 +44,7 @@ struct SerialMonitorApp: App {
         WindowGroup(L10n.appName) {
             SessionView(model: model)
                 .preferredColorScheme(model.appearance.colorScheme)
-                .dynamicTypeSize(model.fontScale.dynamicTypeSize)
+                .environment(\.appFontScale, model.fontScale)
         }
         .defaultSize(width: 1_280, height: 760)
         .commands { SessionCommands(model: model) }

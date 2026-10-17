@@ -17,13 +17,19 @@ enum AppAppearance: String, Sendable, Codable, CaseIterable, Equatable {
 }
 
 enum AppFontScale: String, Sendable, Codable, CaseIterable, Equatable {
-    case small, standard, large
+    case xSmall = "xsmall"
+    case small
+    case standard
+    case large
+    case xLarge = "xlarge"
 
     var multiplier: CGFloat {
         switch self {
-        case .small: 0.9
+        case .xSmall: 0.85
+        case .small: 0.925
         case .standard: 1
         case .large: 1.1
+        case .xLarge: 1.2
         }
     }
 }
@@ -223,8 +229,31 @@ enum ValidationError: Error, Sendable, Equatable, LocalizedError {
     }
 }
 
-enum HexCodec {
-    static func decode(_ text: String, additionalSeparators: CharacterSet = CharacterSet(charactersIn: ",:;_-|")) throws -> Data {
+/// Formats free-form hex input into space-separated byte pairs so typing or
+/// pasting "41 52" / "4152" / "41-52" all normalise to "41 52".
+enum HexInputFormatter {
+    static func format(_ text: String) -> String {
+        var digits: [Character] = []
+        for scalar in text.unicodeScalars where isHexDigit(scalar) {
+            digits.append(Character(scalar))
+        }
+        var result = ""
+        var index = 0
+        while index < digits.count {
+            if index > 0 { result.append(" ") }
+            let end = min(index + 2, digits.count)
+            result.append(contentsOf: digits[index..<end])
+            index = end
+        }
+        return result
+    }
+
+    static func isHexDigit(_ scalar: Unicode.Scalar) -> Bool {
+        CharacterSet(charactersIn: "0123456789abcdefABCDEF").contains(scalar)
+    }
+}
+
+enum HexCodec {    static func decode(_ text: String, additionalSeparators: CharacterSet = CharacterSet(charactersIn: ",:;_-|")) throws -> Data {
         var digits = ""
         for scalar in text.unicodeScalars {
             if CharacterSet.whitespacesAndNewlines.contains(scalar) || additionalSeparators.contains(scalar) {
@@ -452,7 +481,6 @@ struct AppPreferences: Codable, Equatable {
     var logFileNamePrefix = "serial-monitor"
     var appearance: AppAppearance = .system
     var fontScale: AppFontScale = .standard
-    var consoleFontSize: Double = 12
     var consoleLineSpacing: ConsoleLineSpacing = .standard
     var textEncoding: TextEncodingPreference = .utf8
     var hexPresentation = HexPresentation()
@@ -470,7 +498,7 @@ struct AppPreferences: Codable, Equatable {
     enum CodingKeys: String, CodingKey {
         case schemaVersion, defaultConfiguration, receiveFormat, sendFormat, lineEnding
         case showsTimestamps, followsLatest, showsPresets, logDirectoryPath, logDirectoryBookmark, logFileNamePrefix
-        case appearance, fontScale, consoleFontSize, consoleLineSpacing, textEncoding, hexPresentation
+        case appearance, fontScale, consoleLineSpacing, textEncoding, hexPresentation
         case maximumRecords, maximumBytes, autoStartLogging, logRotationMaximumBytes
         case restoresLastConfiguration, restoresSendDraft, sendDraft, autoIntervalMilliseconds, autoRepetitionCountText
     }
@@ -495,7 +523,6 @@ struct AppPreferences: Codable, Equatable {
         logFileNamePrefix = decoded(String.self, .logFileNamePrefix, default: "serial-monitor")
         appearance = decoded(AppAppearance.self, .appearance, default: .system)
         fontScale = decoded(AppFontScale.self, .fontScale, default: .standard)
-        consoleFontSize = decoded(Double.self, .consoleFontSize, default: 12)
         consoleLineSpacing = decoded(ConsoleLineSpacing.self, .consoleLineSpacing, default: .standard)
         textEncoding = decoded(TextEncodingPreference.self, .textEncoding, default: .utf8)
         hexPresentation = decoded(HexPresentation.self, .hexPresentation, default: HexPresentation())
@@ -513,7 +540,6 @@ struct AppPreferences: Codable, Equatable {
 
     mutating func normalize() {
         schemaVersion = Self.currentSchemaVersion
-        consoleFontSize = min(18, max(10, consoleFontSize))
         maximumRecords = [10_000, 50_000, 100_000, 200_000].min(by: { abs($0 - maximumRecords) < abs($1 - maximumRecords) }) ?? 50_000
         maximumBytes = [4, 16, 64, 128].map { $0 * 1_024 * 1_024 }.min(by: { abs($0 - maximumBytes) < abs($1 - maximumBytes) }) ?? RecordStore.defaultMaximumBytes
         if let limit = logRotationMaximumBytes, ![5, 20, 100].map({ $0 * 1_024 * 1_024 }).contains(limit) {

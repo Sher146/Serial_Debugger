@@ -1,8 +1,10 @@
 import SwiftUI
+import AppKit
 import SerialCore
 
 struct SessionView: View {
     @ObservedObject var model: SessionViewModel
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         VStack(spacing: 0) {
@@ -20,8 +22,13 @@ struct SessionView: View {
         }
         .background(Color(nsColor: .windowBackgroundColor))
         .background(WindowMinimumSizeBridge(minimumSize: NSSize(width: 980, height: 680)))
+        .background(TitlebarGlyphBridge(systemImageName: "cable.connector"))
+        .background(UITestWindowPlacementBridge())
         .toolbar { SessionToolbarContent(model: model) }
         .task { model.start() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { model.refreshPorts() }
+        }
         .onDisappear { model.shutdown() }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("session.workspace")
@@ -48,33 +55,29 @@ private struct SessionToolbarContent: ToolbarContent {
     @State private var showsAdvancedParameters = false
 
     var body: some ToolbarContent {
-        ToolbarItem(placement: .navigation) {
-            Image(systemName: "cable.connector")
-                .imageScale(.large)
-                .accessibilityLabel(L10n.appName)
-                .accessibilityIdentifier("session.title")
-        }
-
         ToolbarItemGroup(placement: .automatic) {
-            Picker(L10n.port, selection: $model.configuration.path) {
+            // A plain Picker in an NSToolbar does not reliably draw its selected
+            // value on macOS 26/27, so the port and baud selectors are Menus with
+            // an explicit label that always shows the current value.
+            Menu {
                 if model.ports.isEmpty {
-                    Text("—").tag("")
+                    Text("—")
+                } else {
+                    ForEach(model.ports) { port in
+                        Button(port.displayName) { model.configuration.path = port.path }
+                    }
                 }
-                ForEach(model.ports) { port in
-                    Text(port.displayName)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                        .help(port.path)
-                        .tag(port.path)
-                }
+            } label: {
+                Text(currentPortName)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .frame(width: DesignTokens.toolbarPortPickerWidth - 40, alignment: .leading)
             }
-            .labelsHidden()
-            // NSToolbar compresses flexible SwiftUI frames to its 100 pt
-            // default. A fixed width keeps long `/dev/cu.*` labels usable.
-            .frame(width: DesignTokens.toolbarPortPickerWidth)
+            .fixedSize()
             .controlSize(.large)
             .disabled(model.isConfigurationLocked)
             .accessibilityLabel(L10n.port)
+            .accessibilityValue(currentPortName)
             .accessibilityIdentifier("session.port-picker")
             .help(model.configuration.path.isEmpty ? L10n.port : model.configuration.path)
 
@@ -85,18 +88,20 @@ private struct SessionToolbarContent: ToolbarContent {
                 .accessibilityLabel(L10n.refresh)
                 .accessibilityIdentifier("session.refresh")
 
-            Picker(L10n.baudRate, selection: $model.configuration.baudRate) {
+            Menu {
                 ForEach(BaudRateCatalog.rates(including: model.configuration.baudRate), id: \.self) { rate in
-                    Text(BaudRateCatalog.label(for: rate)).tag(rate)
+                    Button(BaudRateCatalog.label(for: rate)) { model.configuration.baudRate = rate }
                 }
+            } label: {
+                Text(BaudRateCatalog.label(for: model.configuration.baudRate))
+                    .frame(width: 80, alignment: .leading)
             }
-            .labelsHidden()
-            .frame(width: 124)
+            .fixedSize()
             .controlSize(.large)
             .disabled(model.isConfigurationLocked)
             .accessibilityLabel(L10n.baudRate)
-            .accessibilityIdentifier("session.baud-rate")
             .accessibilityValue(BaudRateCatalog.label(for: model.configuration.baudRate))
+            .accessibilityIdentifier("session.baud-rate")
 
             Button(parameterSummary, systemImage: "slider.horizontal.3") {
                 showsAdvancedParameters.toggle()
@@ -143,6 +148,14 @@ private struct SessionToolbarContent: ToolbarContent {
         return "\(model.configuration.dataBits.rawValue)\(parity)\(model.configuration.stopBits.rawValue)"
     }
 
+    private var currentPortName: String {
+        guard !model.configuration.path.isEmpty else { return "—" }
+        if let port = model.ports.first(where: { $0.path == model.configuration.path }) {
+            return port.displayName
+        }
+        return URL(fileURLWithPath: model.configuration.path).lastPathComponent
+    }
+
     private var connectionButtonTitle: String {
         switch model.sessionState {
         case .disconnected: L10n.connect
@@ -182,7 +195,7 @@ private struct SessionStatusBadge: View {
             Image(systemName: symbolName)
                 .symbolRenderingMode(.hierarchical)
         }
-        .font(DesignTokens.statusFont)
+        .appFont(.control, weight: .medium)
         .foregroundStyle(color)
         .accessibilityLabel(title)
         .accessibilityValue(accessibilityState)
@@ -223,7 +236,7 @@ private struct AdvancedParametersPopover: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DesignTokens.standardSpacing) {
-            Text(L10n.advancedParameters).font(.headline)
+            Text(L10n.advancedParameters).appFont(.headline)
             Picker(L10n.dataBits, selection: $configuration.dataBits) {
                 ForEach(SerialConfiguration.DataBits.allCases, id: \.self) { bits in Text("\(bits.rawValue)").tag(bits) }
             }
@@ -250,13 +263,11 @@ private struct AdvancedParametersPopover: View {
 
 private struct ReceiveConsole: View {
     @ObservedObject var model: SessionViewModel
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.appFontScale) private var fontScale
 
     var body: some View {
         VStack(spacing: 0) {
             ConsoleToolbar(model: model)
-                .fixedSize(horizontal: false, vertical: true)
-                .layoutPriority(1)
 
             if model.isPaused {
                 HStack {
@@ -265,9 +276,9 @@ private struct ReceiveConsole: View {
                     Spacer()
                     Button(L10n.resume) { model.togglePause() }
                 }
-                .font(.subheadline)
+                .appFont(.callout)
                 .foregroundStyle(Color.sessionAttention)
-                .padding(.horizontal, DesignTokens.standardSpacing)
+                .padding(.horizontal, DesignTokens.contentInset)
                 .padding(.vertical, 6)
                 .background(Color.sessionAttention.opacity(0.1))
                 .zIndex(1)
@@ -275,49 +286,34 @@ private struct ReceiveConsole: View {
                 .accessibilityIdentifier("console.paused-banner")
             }
 
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 2) {
-                        if model.visibleRecords.isEmpty {
-                            VStack(spacing: DesignTokens.compactSpacing) {
-                                Image(systemName: "text.line.first.and.arrowtriangle.forward")
-                                    .font(.title3)
-                                Text(L10n.noRecords)
-                                    .font(.subheadline)
-                            }
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, minHeight: 280)
-                        } else {
-                            ForEach(model.visibleRecords) { record in
-                                ConsoleRecordRow(
-                                    record: record,
-                                    format: model.receiveFormat,
-                                    showsTimestamp: model.showsTimestamps,
-                                    textEncoding: model.textEncoding,
-                                    hexPresentation: model.hexPresentation,
-                                    fontSize: model.consoleFontSize,
-                                    lineSpacing: model.consoleLineSpacing.points
-                                )
-                                    .id(record.id)
-                            }
-                        }
+            ZStack {
+                ConsoleTextView(
+                    records: model.visibleRecords,
+                    format: model.receiveFormat,
+                    showsTimestamp: model.showsTimestamps,
+                    textEncoding: model.textEncoding,
+                    hexPresentation: model.hexPresentation,
+                    fontSize: DesignTokens.monoFontSize(scale: fontScale),
+                    lineSpacing: model.consoleLineSpacing.points,
+                    followsLatest: model.followsLatest && !model.isPaused
+                )
+
+                if model.visibleRecords.isEmpty {
+                    VStack(spacing: DesignTokens.compactSpacing) {
+                        Image(systemName: "text.line.first.and.arrowtriangle.forward")
+                            .appFont(.title)
+                        Text(L10n.noRecords)
+                            .appFont(.callout)
                     }
-                    .padding(.vertical, DesignTokens.compactSpacing)
-                }
-                .background(Color.consoleSurface)
-                .onChange(of: model.visibleRecords.count) { _, _ in
-                    guard model.followsLatest, !model.isPaused, let id = model.visibleRecords.last?.id else { return }
-                    if reduceMotion {
-                        proxy.scrollTo(id, anchor: .bottom)
-                    } else {
-                        withAnimation { proxy.scrollTo(id, anchor: .bottom) }
-                    }
+                    .foregroundStyle(.secondary)
+                    .allowsHitTesting(false)
                 }
             }
+            .containerSurface()
+            .padding(.horizontal, DesignTokens.contentInset)
+            .padding(.bottom, DesignTokens.contentInset)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("console.records")
     }
 }
 
@@ -326,7 +322,7 @@ private struct ConsoleToolbar: View {
 
     var body: some View {
         HStack(spacing: DesignTokens.compactSpacing) {
-            Text(L10n.records).font(.subheadline.weight(.semibold))
+            Text(L10n.records).appFont(.headline)
             ToolbarSeparator()
             ControlGroup {
                 Button(model.isPaused ? L10n.resume : L10n.pause, systemImage: model.isPaused ? "play.fill" : "pause.fill") { model.togglePause() }
@@ -345,144 +341,365 @@ private struct ConsoleToolbar: View {
                 Text("HEX").tag(DisplayFormat.hex)
             }
             .pickerStyle(.segmented)
-            .frame(width: 112)
-            .controlSize(.large)
+            .labelsHidden()
+            .frame(width: 120)
             .accessibilityLabel("接收显示格式")
             .accessibilityIdentifier("console.display-format")
             Toggle(L10n.timestamp, isOn: $model.showsTimestamps)
                 .toggleStyle(.button)
                 .controlSize(.large)
+                .frame(minWidth: 66)
                 .accessibilityIdentifier("console.timestamps")
             Toggle(L10n.follow, isOn: $model.followsLatest)
                 .toggleStyle(.button)
                 .controlSize(.large)
+                .frame(minWidth: 56)
                 .accessibilityIdentifier("console.follow")
             Spacer()
             Text("\(model.visibleRecords.count) 条")
                 .foregroundStyle(.secondary)
-                .font(.caption.monospacedDigit())
+                .appFont(.caption)
         }
-        .padding(.horizontal, DesignTokens.standardSpacing)
-        .padding(.vertical, 8)
+        .padding(.horizontal, DesignTokens.contentInset)
+        .frame(height: DesignTokens.barHeight)
         .background(.bar)
     }
 }
 
-private struct ConsoleRecordRow: View {
-    let record: CommunicationRecord
+private struct ConsoleLine {
+    let timestamp: Date
+    let direction: RecordDirection
+    let text: String
+}
+
+/// Assembles a byte stream into display lines. ASCII/GB18030 data is buffered
+/// until a newline so a device line is not split across rows by arrival timing;
+/// HEX mode emits one line per record.
+private struct ConsoleLineAssembler {
+    private var pendingBytes: [UInt8] = []
+    private var pendingTimestamp = Date.distantPast
+    private var pendingDirection: RecordDirection = .received
+
+    mutating func reset() {
+        pendingBytes.removeAll(keepingCapacity: true)
+        pendingTimestamp = .distantPast
+        pendingDirection = .received
+    }
+
+    mutating func consume(
+        _ record: CommunicationRecord,
+        format: DisplayFormat,
+        encoding: TextEncodingPreference,
+        hexPresentation: HexPresentation
+    ) -> [ConsoleLine] {
+        if format == .hex {
+            let text = HexCodec.encode(record.rawBytes, presentation: hexPresentation)
+            return text.isEmpty ? [] : [ConsoleLine(timestamp: record.timestamp, direction: record.direction, text: text)]
+        }
+        if record.direction == .transmitted {
+            let text = Self.trim(TextPayloadCodec.decodeForDisplay(record.rawBytes, encoding: encoding))
+            return [ConsoleLine(timestamp: record.timestamp, direction: .transmitted, text: text)]
+        }
+
+        if pendingBytes.isEmpty {
+            pendingTimestamp = record.timestamp
+            pendingDirection = .received
+        }
+        pendingBytes.append(contentsOf: record.rawBytes)
+
+        var lines: [ConsoleLine] = []
+        while let newlineIndex = pendingBytes.firstIndex(of: 0x0A) {
+            let lineBytes = pendingBytes[0..<newlineIndex]
+            pendingBytes.removeSubrange(0...newlineIndex)
+            let text = Self.trim(TextPayloadCodec.decodeForDisplay(Data(lineBytes), encoding: encoding))
+            lines.append(ConsoleLine(timestamp: pendingTimestamp, direction: pendingDirection, text: text))
+            if !pendingBytes.isEmpty {
+                pendingTimestamp = record.timestamp
+                pendingDirection = .received
+            }
+        }
+        return lines
+    }
+
+    func pendingLine(format: DisplayFormat, encoding: TextEncodingPreference) -> ConsoleLine? {
+        guard format != .hex, !pendingBytes.isEmpty else { return nil }
+        let text = TextPayloadCodec.decodeForDisplay(Data(pendingBytes), encoding: encoding)
+        let timestamp = pendingTimestamp == .distantPast ? Date() : pendingTimestamp
+        return ConsoleLine(timestamp: timestamp, direction: pendingDirection, text: text)
+    }
+
+    private static func trim(_ text: String) -> String {
+        var result = text
+        while result.hasSuffix("\r") || result.hasSuffix("\n") { result.removeLast() }
+        return result
+    }
+}
+
+/// Single-selectable NSTextView console. Unlike per-row SwiftUI text, it offers
+/// native wrapping and cross-line selection/copy, and appends incrementally.
+private struct ConsoleTextView: NSViewRepresentable {
+    let records: [CommunicationRecord]
     let format: DisplayFormat
     let showsTimestamp: Bool
     let textEncoding: TextEncodingPreference
     let hexPresentation: HexPresentation
     let fontSize: Double
     let lineSpacing: CGFloat
+    let followsLatest: Bool
 
-    var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: DesignTokens.compactSpacing) {
-            if showsTimestamp {
-                Text(record.timestamp, format: .dateTime.hour().minute().second().secondFraction(.fractional(3)))
-                    .foregroundStyle(.secondary)
-            }
-            Text(record.direction.rawValue)
-                .foregroundStyle(record.direction == .received ? Color.sessionConnected : Color.accentColor)
-                .fontWeight(.semibold)
-            Text(RecordFormatter.string(for: record, format: format, textEncoding: textEncoding, hexPresentation: hexPresentation))
-                .textSelection(.enabled)
-            if case .failed(let error)? = record.sendResult {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundStyle(Color.sessionError)
-                    .help(error.localizedDescription)
-            }
-        }
-        .font(.system(size: fontSize, weight: .regular, design: .monospaced))
-        .lineSpacing(lineSpacing)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, DesignTokens.standardSpacing)
-        .padding(.vertical, 1)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(record.direction.rawValue) \(RecordFormatter.string(for: record, format: format, textEncoding: textEncoding, hexPresentation: hexPresentation))")
-        .accessibilityIdentifier(recordAccessibilityIdentifier)
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeNSView(context: Context) -> NSScrollView {
+        let scrollView = NSTextView.scrollableTextView()
+        let textView = (scrollView.documentView as? NSTextView) ?? NSTextView()
+        textView.isEditable = false
+        textView.isSelectable = true
+        textView.drawsBackground = false
+        textView.textContainerInset = NSSize(width: 8, height: 8)
+        textView.isVerticallyResizable = true
+        textView.isHorizontallyResizable = false
+        textView.textContainer?.widthTracksTextView = true
+        textView.setAccessibilityIdentifier("console.records")
+        context.coordinator.textView = textView
+        return scrollView
     }
 
-    private var recordAccessibilityIdentifier: String {
-        let bytes = record.rawBytes.map { String(format: "%02X", $0) }.joined()
-        return "console.record.\(record.direction.rawValue).\(bytes)"
+    func updateNSView(_ scrollView: NSScrollView, context: Context) {
+        context.coordinator.update(
+            records: records,
+            format: format,
+            showsTimestamp: showsTimestamp,
+            textEncoding: textEncoding,
+            hexPresentation: hexPresentation,
+            fontSize: fontSize,
+            lineSpacing: lineSpacing,
+            followsLatest: followsLatest
+        )
+    }
+
+    @MainActor
+    final class Coordinator {
+        weak var textView: NSTextView?
+        private var assembler = ConsoleLineAssembler()
+        private var renderedCount = 0
+        private var lastRenderedID: UUID?
+        private var renderKey = ""
+        private var committedLength = 0
+        private let formatter: DateFormatter = {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "HH:mm:ss.SSS"
+            return formatter
+        }()
+
+        func update(
+            records: [CommunicationRecord],
+            format: DisplayFormat,
+            showsTimestamp: Bool,
+            textEncoding: TextEncodingPreference,
+            hexPresentation: HexPresentation,
+            fontSize: Double,
+            lineSpacing: CGFloat,
+            followsLatest: Bool
+        ) {
+            guard let textView else { return }
+            let font = NSFont.monospacedSystemFont(ofSize: fontSize, weight: .regular)
+            let paragraph = NSMutableParagraphStyle()
+            paragraph.lineSpacing = lineSpacing
+
+            let key = "\(format.rawValue)|\(showsTimestamp)|\(textEncoding.rawValue)|\(hexPresentation.separator.rawValue)|\(hexPresentation.usesUppercase)|\(fontSize)|\(lineSpacing)"
+            let canAppend = key == renderKey
+                && records.count >= renderedCount
+                && (renderedCount == 0 || records[renderedCount - 1].id == lastRenderedID)
+
+            if canAppend {
+                if records.count > renderedCount {
+                    append(
+                        Array(records[renderedCount...]),
+                        into: textView,
+                        font: font,
+                        paragraph: paragraph,
+                        format: format,
+                        showsTimestamp: showsTimestamp,
+                        textEncoding: textEncoding,
+                        hexPresentation: hexPresentation
+                    )
+                }
+            } else {
+                rebuild(
+                    records,
+                    into: textView,
+                    font: font,
+                    paragraph: paragraph,
+                    format: format,
+                    showsTimestamp: showsTimestamp,
+                    textEncoding: textEncoding,
+                    hexPresentation: hexPresentation
+                )
+                renderKey = key
+            }
+
+            renderedCount = records.count
+            lastRenderedID = records.last?.id
+            if followsLatest {
+                textView.scrollToEndOfDocument(nil)
+            }
+        }
+
+        private func rebuild(
+            _ records: [CommunicationRecord],
+            into textView: NSTextView,
+            font: NSFont,
+            paragraph: NSParagraphStyle,
+            format: DisplayFormat,
+            showsTimestamp: Bool,
+            textEncoding: TextEncodingPreference,
+            hexPresentation: HexPresentation
+        ) {
+            assembler.reset()
+            let complete = NSMutableAttributedString()
+            for record in records {
+                for line in assembler.consume(record, format: format, encoding: textEncoding, hexPresentation: hexPresentation) {
+                    complete.append(attributed(line, font: font, paragraph: paragraph, showsTimestamp: showsTimestamp))
+                }
+            }
+            let storage = textView.textStorage!
+            storage.beginEditing()
+            storage.setAttributedString(complete)
+            committedLength = storage.length
+            if let pending = assembler.pendingLine(format: format, encoding: textEncoding) {
+                storage.append(attributed(pending, font: font, paragraph: paragraph, showsTimestamp: showsTimestamp))
+            }
+            storage.endEditing()
+        }
+
+        private func append(
+            _ newRecords: [CommunicationRecord],
+            into textView: NSTextView,
+            font: NSFont,
+            paragraph: NSParagraphStyle,
+            format: DisplayFormat,
+            showsTimestamp: Bool,
+            textEncoding: TextEncodingPreference,
+            hexPresentation: HexPresentation
+        ) {
+            let complete = NSMutableAttributedString()
+            for record in newRecords {
+                for line in assembler.consume(record, format: format, encoding: textEncoding, hexPresentation: hexPresentation) {
+                    complete.append(attributed(line, font: font, paragraph: paragraph, showsTimestamp: showsTimestamp))
+                }
+            }
+            let storage = textView.textStorage!
+            storage.beginEditing()
+            storage.replaceCharacters(
+                in: NSRange(location: committedLength, length: storage.length - committedLength),
+                with: complete
+            )
+            committedLength += complete.length
+            if let pending = assembler.pendingLine(format: format, encoding: textEncoding) {
+                storage.append(attributed(pending, font: font, paragraph: paragraph, showsTimestamp: showsTimestamp))
+            }
+            storage.endEditing()
+        }
+
+        private func attributed(
+            _ line: ConsoleLine,
+            font: NSFont,
+            paragraph: NSParagraphStyle,
+            showsTimestamp: Bool
+        ) -> NSAttributedString {
+            let result = NSMutableAttributedString()
+            if showsTimestamp {
+                result.append(NSAttributedString(
+                    string: formatter.string(from: line.timestamp) + " ",
+                    attributes: [.font: font, .paragraphStyle: paragraph, .foregroundColor: NSColor.secondaryLabelColor]
+                ))
+            }
+            let directionColor: NSColor = line.direction == .received ? .systemGreen : .controlAccentColor
+            result.append(NSAttributedString(
+                string: line.direction.rawValue + " ",
+                attributes: [.font: font, .paragraphStyle: paragraph, .foregroundColor: directionColor]
+            ))
+            result.append(NSAttributedString(
+                string: line.text + "\n",
+                attributes: [.font: font, .paragraphStyle: paragraph, .foregroundColor: NSColor.labelColor]
+            ))
+            return result
+        }
     }
 }
 
 private struct SendEditor: View {
     @ObservedObject var model: SessionViewModel
-    @FocusState private var editorFocused: Bool
+    @Environment(\.appFontScale) private var fontScale
 
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: DesignTokens.compactSpacing) {
-                Text(L10n.send).font(.subheadline.weight(.semibold))
+                Text(L10n.send).appFont(.headline)
                 ToolbarSeparator()
                 Picker("", selection: $model.sendFormat) {
                     Text("ASCII").tag(DisplayFormat.ascii)
                     Text("HEX").tag(DisplayFormat.hex)
                 }
                 .pickerStyle(.segmented)
-                .frame(width: 130)
+                .labelsHidden()
+                .frame(width: 120)
                 .accessibilityLabel("发送格式")
                 .accessibilityIdentifier("send.format")
-                Picker(L10n.lineEnding, selection: $model.lineEnding) {
-                    Text(L10n.none).tag(LineEnding.none)
-                    Text("CR").tag(LineEnding.cr)
-                    Text("LF").tag(LineEnding.lf)
-                    Text("CRLF").tag(LineEnding.crlf)
+                Menu {
+                    Button(L10n.none) { model.lineEnding = .none }
+                    Button("CR") { model.lineEnding = .cr }
+                    Button("LF") { model.lineEnding = .lf }
+                    Button("CRLF") { model.lineEnding = .crlf }
+                } label: {
+                    Text("\(L10n.lineEnding) \(model.lineEnding.shortLabel)")
                 }
-                .frame(width: 120)
+                .controlSize(.large)
                 .accessibilityIdentifier("send.line-ending")
+                .accessibilityValue(model.lineEnding.shortLabel)
                 Spacer()
             }
-            .padding(.horizontal, DesignTokens.standardSpacing)
+            .padding(.horizontal, DesignTokens.contentInset)
             .frame(height: 36)
             .fixedSize(horizontal: false, vertical: true)
             .layoutPriority(1)
             .background(.bar)
 
             HStack(alignment: .bottom, spacing: DesignTokens.standardSpacing) {
-                TextEditor(text: $model.sendText)
-                    .font(.system(size: model.consoleFontSize, weight: .regular, design: .monospaced))
-                    .focused($editorFocused)
-                    .scrollContentBackground(.hidden)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 4)
-                    .frame(minHeight: 82, maxHeight: 110)
-                    .background(Color.consoleSurface)
-                    .overlay {
-                        Rectangle().stroke(Color(nsColor: .separatorColor), lineWidth: 1)
-                    }
-                    .overlay(alignment: .topLeading) {
-                        if model.sendText.isEmpty {
-                            Text(model.isConnected ? L10n.sendPlaceholder : L10n.connectToSend)
-                                .foregroundStyle(.tertiary)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 14)
-                                .allowsHitTesting(false)
-                        }
-                    }
-                    .disabled(!model.isConnected)
+                ZStack(alignment: .topLeading) {
+                    PlainTextEditor(
+                        text: $model.sendText,
+                        isEditable: model.isConnected,
+                        fontSize: DesignTokens.monoFontSize(scale: fontScale),
+                        accessibilityIdentifier: "send.editor"
+                    )
                     .accessibilityLabel(L10n.send)
-                    .accessibilityIdentifier("send.editor")
+
+                    if model.sendText.isEmpty {
+                        Text(model.isConnected ? L10n.sendPlaceholder : L10n.connectToSend)
+                            .appFont(.mono)
+                            .foregroundStyle(.tertiary)
+                            .padding(PlainTextEditor.textInset)
+                            .allowsHitTesting(false)
+                    }
+                }
+                .frame(minHeight: 82, maxHeight: 110)
+                .containerSurface(cornerRadius: DesignTokens.controlCornerRadius)
 
                 Button(L10n.send, systemImage: "paperplane.fill") {
                     model.sendCurrentText()
-                    editorFocused = true
                 }
                 .buttonStyle(.borderedProminent)
                 .keyboardShortcut(.return, modifiers: .command)
                 .disabled(!model.canSend)
                 .accessibilityIdentifier("send.button")
             }
-            .padding(.horizontal, DesignTokens.standardSpacing)
+            .padding(.horizontal, DesignTokens.contentInset)
             .padding(.vertical, 8)
 
             HStack(spacing: DesignTokens.compactSpacing) {
                 Label("自动发送", systemImage: "repeat")
-                    .font(.caption.weight(.semibold))
+                    .appFont(.caption, weight: .semibold)
                 TextField("间隔 ms", value: $model.autoIntervalMilliseconds, format: .number)
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 96)
@@ -498,21 +715,21 @@ private struct SendEditor: View {
                 .accessibilityIdentifier("auto-send.toggle")
                 if case .running(_, let remaining) = model.autoSendStatus {
                     Text(remaining.map { "剩余 \($0) 次" } ?? "持续发送中")
-                        .font(.caption)
+                        .appFont(.caption)
                         .foregroundStyle(Color.sessionConnected)
                         .accessibilityIdentifier("auto-send.status")
                 }
                 Spacer()
             }
-            .padding(.horizontal, DesignTokens.standardSpacing)
+            .padding(.horizontal, DesignTokens.contentInset)
             .padding(.bottom, 6)
 
             if let error = model.sendValidationError {
                 Label(error.localizedDescription, systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption)
+                    .appFont(.caption)
                     .foregroundStyle(Color.sessionError)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, DesignTokens.standardSpacing)
+                    .padding(.horizontal, DesignTokens.contentInset)
                     .padding(.bottom, DesignTokens.compactSpacing)
                     .accessibilityIdentifier("send.validation-error")
             }
@@ -531,7 +748,7 @@ private struct PresetInspector: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Label(L10n.presets, systemImage: "list.bullet.rectangle")
-                    .font(.subheadline.weight(.semibold))
+                    .appFont(.headline)
                 Spacer()
                 Button("新增", systemImage: "plus") {
                     editor = PresetEditorState()
@@ -539,18 +756,15 @@ private struct PresetInspector: View {
                 .labelStyle(.iconOnly)
                 .accessibilityIdentifier("presets.add")
             }
-            .padding(.horizontal, DesignTokens.standardSpacing)
-            .padding(.vertical, 8)
+            .padding(.horizontal, 4)
+            .frame(height: DesignTokens.barHeight)
             .background(.bar)
-            .overlay(alignment: .bottom) { Divider() }
-            .fixedSize(horizontal: false, vertical: true)
-            .layoutPriority(1)
 
             if model.presets.isEmpty {
                 VStack(spacing: DesignTokens.compactSpacing) {
                     ContentUnavailableView("暂无预设", systemImage: "tray", description: Text("新建后可单次发送或循环发送"))
                     Text("预设检查器为空")
-                        .font(.caption)
+                        .appFont(.caption)
                         .foregroundStyle(.secondary)
                         .accessibilityIdentifier("presets.placeholder")
                 }
@@ -558,9 +772,16 @@ private struct PresetInspector: View {
             } else {
                 List(model.presets) { preset in
                     VStack(alignment: .leading, spacing: 6) {
-                        Text(preset.name).font(.subheadline.weight(.semibold))
+                        Text(preset.name).appFont(.headline)
+                        Text(preset.content)
+                            .appFont(.mono)
+                            .lineLimit(2)
+                            .truncationMode(.tail)
+                            .textSelection(.enabled)
+                            .help(preset.content)
+                            .accessibilityIdentifier("presets.content.\(preset.id.uuidString)")
                         Text("\(preset.format.rawValue.uppercased()) · \(preset.lineEnding.rawValue.uppercased())")
-                            .font(.caption)
+                            .appFont(.caption)
                             .foregroundStyle(.secondary)
                         HStack(spacing: 8) {
                             Button("发送") { model.sendPreset(preset) }
@@ -575,6 +796,13 @@ private struct PresetInspector: View {
                         }
                         .buttonStyle(.borderless)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, DesignTokens.compactSpacing + 4)
+                    .padding(.vertical, DesignTokens.compactSpacing)
+                    .containerSurface()
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+                    .listRowBackground(Color.clear)
                     .contextMenu {
                         Button("删除", role: .destructive) { model.deletePreset(preset) }
                     }
@@ -613,13 +841,14 @@ private struct PresetEditorState: Identifiable {
 
 private struct PresetEditorSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.appFontScale) private var fontScale
     @State var state: PresetEditorState
     @ObservedObject var model: SessionViewModel
     @State private var error: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: DesignTokens.standardSpacing) {
-            Text(state.presetID == nil ? "新建预设" : "编辑预设").font(.headline)
+            Text(state.presetID == nil ? "新建预设" : "编辑预设").appFont(.headline)
             TextField("名称", text: $state.name).accessibilityIdentifier("presets.editor.name")
             Picker("格式", selection: $state.format) {
                 Text("ASCII").tag(DisplayFormat.ascii)
@@ -631,12 +860,25 @@ private struct PresetEditorSheet: View {
                 Text("LF").tag(LineEnding.lf)
                 Text("CRLF").tag(LineEnding.crlf)
             }
-            TextEditor(text: $state.content)
-                .font(DesignTokens.consoleFont)
-                .frame(minHeight: 120)
-                .overlay { Rectangle().stroke(Color(nsColor: .separatorColor)) }
-                .accessibilityIdentifier("presets.editor.content")
-            if let error { Text(error).font(.caption).foregroundStyle(Color.sessionError) }
+            PlainTextEditor(
+                text: $state.content,
+                isEditable: true,
+                fontSize: DesignTokens.monoFontSize(scale: fontScale),
+                accessibilityIdentifier: "presets.editor.content"
+            )
+            .frame(minHeight: 120)
+            .containerSurface(cornerRadius: DesignTokens.controlCornerRadius)
+            .onChange(of: state.content) { _, newValue in
+                guard state.format == .hex else { return }
+                let formatted = HexInputFormatter.format(newValue)
+                if formatted != newValue { state.content = formatted }
+            }
+            .onChange(of: state.format) { _, format in
+                guard format == .hex else { return }
+                let formatted = HexInputFormatter.format(state.content)
+                if formatted != state.content { state.content = formatted }
+            }
+            if let error { Text(error).appFont(.caption).foregroundStyle(Color.sessionError) }
             HStack {
                 Spacer()
                 Button("取消") { dismiss() }
@@ -692,9 +934,9 @@ private struct SessionStatusBar: View {
                     .accessibilityIdentifier("status.error")
             }
         }
-        .font(.caption)
-        .padding(.horizontal, DesignTokens.standardSpacing)
-        .frame(height: 26)
+        .appFont(.subheadline)
+        .padding(.horizontal, DesignTokens.contentInset)
+        .frame(height: 28)
         .background(.bar)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("session.status-bar")
@@ -740,6 +982,78 @@ private struct ToolbarSeparator: View {
             .fill(Color(nsColor: .separatorColor))
             .frame(width: 1, height: 16)
             .accessibilityHidden(true)
+    }
+}
+
+/// Plain monospaced editor with deterministic insets so a placeholder overlay
+/// can line up exactly with the caret/text.
+private struct PlainTextEditor: NSViewRepresentable {
+    @Binding var text: String
+    var isEditable: Bool
+    var fontSize: CGFloat
+    var accessibilityIdentifier: String
+
+    static let textInset: CGFloat = 8
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    func makeNSView(context: Context) -> NSScrollView {
+        let scrollView = NSTextView.scrollableTextView()
+        let textView = (scrollView.documentView as? NSTextView) ?? NSTextView()
+        textView.delegate = context.coordinator
+        textView.isRichText = false
+        textView.isEditable = isEditable
+        textView.isSelectable = true
+        textView.drawsBackground = false
+        textView.allowsUndo = true
+        textView.font = NSFont.monospacedSystemFont(ofSize: fontSize, weight: .regular)
+        textView.textContainerInset = NSSize(width: Self.textInset, height: Self.textInset)
+        textView.textContainer?.lineFragmentPadding = 0
+        textView.isVerticallyResizable = true
+        textView.isHorizontallyResizable = false
+        textView.textContainer?.widthTracksTextView = true
+        textView.setAccessibilityIdentifier(accessibilityIdentifier)
+        textView.string = text
+        scrollView.drawsBackground = false
+        scrollView.borderType = .noBorder
+        return scrollView
+    }
+
+    func updateNSView(_ scrollView: NSScrollView, context: Context) {
+        context.coordinator.parent = self
+        guard let textView = scrollView.documentView as? NSTextView else { return }
+        textView.isEditable = isEditable
+        textView.font = NSFont.monospacedSystemFont(ofSize: fontSize, weight: .regular)
+        if !context.coordinator.isEditing, textView.string != text {
+            textView.string = text
+        }
+    }
+
+    final class Coordinator: NSObject, NSTextViewDelegate {
+        var parent: PlainTextEditor
+        var isEditing = false
+
+        init(_ parent: PlainTextEditor) {
+            self.parent = parent
+        }
+
+        func textDidChange(_ notification: Notification) {
+            guard let textView = notification.object as? NSTextView else { return }
+            isEditing = true
+            parent.text = textView.string
+            isEditing = false
+        }
+    }
+}
+
+private extension LineEnding {
+    var shortLabel: String {
+        switch self {
+        case .none: "无"
+        case .cr: "CR"
+        case .lf: "LF"
+        case .crlf: "CRLF"
+        }
     }
 }
 

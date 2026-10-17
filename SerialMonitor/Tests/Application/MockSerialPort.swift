@@ -38,6 +38,7 @@ actor MockSerialPort: SerialPorting {
 
     func emitIncoming(_ data: Data) { incomingPair.continuation.yield(data) }
     func emitEvent(_ event: SerialConnectionEvent) { eventPair.continuation.yield(event) }
+    func setPorts(_ newPorts: [SerialPortDescriptor]) { ports = newPorts }
     func writes() -> [Data] { writesStorage }
 }
 

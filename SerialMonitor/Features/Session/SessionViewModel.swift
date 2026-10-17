@@ -20,7 +20,6 @@ final class SessionViewModel: ObservableObject {
     @Published var showsPresets = true { didSet { persistIfNeeded() } }
     @Published var appearance: AppAppearance = .system { didSet { persistIfNeeded() } }
     @Published var fontScale: AppFontScale = .standard { didSet { persistIfNeeded() } }
-    @Published var consoleFontSize: Double = 12 { didSet { persistIfNeeded() } }
     @Published var consoleLineSpacing: ConsoleLineSpacing = .standard { didSet { persistIfNeeded() } }
     @Published var textEncoding: TextEncodingPreference = .utf8 { didSet { persistIfNeeded() } }
     @Published var hexPresentation = HexPresentation() { didSet { persistIfNeeded() } }
@@ -44,6 +43,8 @@ final class SessionViewModel: ObservableObject {
     private let presetStore: PresetStore
     private var subscriptionTask: Task<Void, Never>?
     private var sendValidationCancellable: AnyCancellable?
+    private var sendTextFormattingCancellable: AnyCancellable?
+    private var sendFormatCancellable: AnyCancellable?
     private var pausedRecordEvents: [CommunicationRecord] = []
     private var activeSecurityScopedDirectory: URL?
     private var activePresetID: UUID?
@@ -68,7 +69,6 @@ final class SessionViewModel: ObservableObject {
         logFileNamePrefix = preferences.logFileNamePrefix
         appearance = preferences.appearance
         fontScale = preferences.fontScale
-        consoleFontSize = preferences.consoleFontSize
         consoleLineSpacing = preferences.consoleLineSpacing
         textEncoding = preferences.textEncoding
         hexPresentation = preferences.hexPresentation
@@ -96,6 +96,22 @@ final class SessionViewModel: ObservableObject {
             .debounce(for: .milliseconds(50), scheduler: RunLoop.main)
             .sink { [weak self] _ in
                 self?.validateSendText()
+            }
+        sendTextFormattingCancellable = $sendText
+            .dropFirst()
+            .sink { [weak self] text in
+                guard let self, self.sendFormat == .hex else { return }
+                let formatted = HexInputFormatter.format(text)
+                guard formatted != text else { return }
+                Task { @MainActor [weak self] in self?.sendText = formatted }
+            }
+        sendFormatCancellable = $sendFormat
+            .dropFirst()
+            .sink { [weak self] format in
+                guard let self, format == .hex else { return }
+                let formatted = HexInputFormatter.format(self.sendText)
+                guard formatted != self.sendText else { return }
+                Task { @MainActor [weak self] in self?.sendText = formatted }
             }
     }
 
@@ -374,7 +390,6 @@ final class SessionViewModel: ObservableObject {
         preferences.logFileNamePrefix = SafeFileName.sanitize(logFileNamePrefix)
         preferences.appearance = appearance
         preferences.fontScale = fontScale
-        preferences.consoleFontSize = consoleFontSize
         preferences.consoleLineSpacing = consoleLineSpacing
         preferences.textEncoding = textEncoding
         preferences.hexPresentation = hexPresentation
@@ -405,7 +420,6 @@ final class SessionViewModel: ObservableObject {
         logFileNamePrefix = preferences.logFileNamePrefix
         appearance = preferences.appearance
         fontScale = preferences.fontScale
-        consoleFontSize = preferences.consoleFontSize
         consoleLineSpacing = preferences.consoleLineSpacing
         textEncoding = preferences.textEncoding
         hexPresentation = preferences.hexPresentation

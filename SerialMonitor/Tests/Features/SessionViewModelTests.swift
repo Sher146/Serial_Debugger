@@ -29,18 +29,18 @@ final class SessionViewModelTests: XCTestCase {
         let store = PreferencesStore(defaults: defaults, key: "preferences")
         var persisted = AppPreferences()
         persisted.appearance = .dark
-        persisted.consoleFontSize = 18
+        persisted.fontScale = .xLarge
         store.save(persisted)
         let viewModel = SessionViewModel(client: SessionClientStub(), preferencesStore: store)
         let defaultDraft = AppPreferences()
 
         XCTAssertEqual(viewModel.appearance, .dark)
-        XCTAssertEqual(viewModel.consoleFontSize, 18)
+        XCTAssertEqual(viewModel.fontScale, .xLarge)
 
         viewModel.applySettings(defaultDraft)
 
         XCTAssertEqual(viewModel.appearance, .system)
-        XCTAssertEqual(viewModel.consoleFontSize, 12)
+        XCTAssertEqual(viewModel.fontScale, .standard)
         XCTAssertEqual(store.load().appearance, .system)
     }
 

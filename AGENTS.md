@@ -106,6 +106,7 @@ DIST_OUTPUT=build/dist bash Scripts/build_distribution.sh  # 通用二进制 .zi
 
 ## 文档索引
 
+- 界面设计规范：[Serial_Monitor_UI设计规范_V1.0.html](Serial_Monitor_UI设计规范_V1.0.html)（基于 Apple Human Interface Guidelines；圆角控件 6/容器 10、8pt 栅格与 20pt 内容边距、字号取 HIG macOS text styles）
 - 环境与限制：[Docs/DevelopmentEnvironment.md](Docs/DevelopmentEnvironment.md)
 - 测试矩阵：[Docs/AutomatedTestMatrix.md](Docs/AutomatedTestMatrix.md)、[Docs/UITestChecklist.md](Docs/UITestChecklist.md)
 - 发布：[Docs/ReleaseChecklist.md](Docs/ReleaseChecklist.md)、[Docs/Licenses.md](Docs/Licenses.md)

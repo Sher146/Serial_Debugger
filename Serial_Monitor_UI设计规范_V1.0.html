@@ -60,8 +60,9 @@
       </nav>
       <main>
         <h1>Serial Monitor</h1>
-        <p class="subtitle">macOS 原生串口调试助手 · UI 设计规范</p>
+        <p class="subtitle">macOS 原生串口调试助手 · UI 设计规范（基于 Apple Human Interface Guidelines）</p>
         <div class="callout"><strong>定位</strong> 这是独立于功能需求文档的界面设计基线。它定义产品应该“长什么样、如何组织、状态如何表达、菜单怎样工作”，用于 SwiftUI 页面开发和验收。</div>
+        <div class="callout"><strong>依据</strong> 本规范以 Apple 官方 Human Interface Guidelines（developer.apple.com/design/human-interface-guidelines，2026 版）为准，重点参考 Layout、Toolbars、Buttons、Typography、Segmented Controls、Pop-up Buttons、Windows。HIG 对间距/圆角多为原则性描述，本文将其落为具体令牌（标注“推导值”）。</div>
 
         <h2 id="principles">1. 设计目标与原则</h2>
         <div class="grid">
@@ -70,7 +71,7 @@
           <div class="card"><h4>状态优先</h4><p>连接、日志、自动发送、错误都用文字、图标和颜色三重表达，不能只靠颜色。</p></div>
           <div class="card"><h4>读码第一</h4><p>玻璃材质只作为层级与容器，不侵入长日志阅读区域；控制台始终保持清晰对比度。</p></div>
         </div>
-        <ul><li>采用“专业工具 + Apple 原生”气质，参考 Console、Xcode 检查器与系统设置的阅读节奏。</li><li>默认浅色、跟随系统外观；用户可在设置中指定浅色、深色或跟随系统。</li><li>默认窗口最小尺寸为 980 × 680 pt；窗口变窄时先收起检查器，再压缩次要文本，最后才允许横向表格滚动。</li><li>Liquid Glass / Material 仅用于工具栏、浮层、侧栏和短操作块；数据控制台使用实色或高不透明材质。</li></ul>
+        <ul><li>采用“专业工具 + Apple 原生”气质，参考 Console、Xcode 检查器与系统设置的阅读节奏。</li><li>默认浅色、跟随系统外观；用户可在设置中指定浅色、深色或跟随系统。</li><li>默认窗口最小尺寸为 980 × 680 pt；窗口变窄时先收起检查器，再压缩次要文本，最后才允许横向表格滚动。</li><li>Liquid Glass / Material 仅用于工具栏、浮层、侧栏和短操作块；数据控制台使用实色或高不透明材质。</li><li>布局遵循 8 pt 栅格与 20 pt 窗口内容边距；自定义控件圆角与所在栏同心（Apple HIG）。</li></ul>
 
         <h2 id="style">2. 视觉风格与设计令牌</h2>
         <h3>2.1 颜色与状态</h3>
@@ -82,17 +83,18 @@
         </div>
         <table><thead><tr><th>令牌</th><th>建议值</th><th>使用规则</th></tr></thead><tbody>
           <tr><td>窗口背景</td><td>系统 window background / grouped background</td><td>随深浅色变化；不使用纯白大面积背景。</td></tr>
-          <tr><td>分层材质</td><td>regularMaterial / thickMaterial</td><td>工具栏、侧栏、弹出菜单、检查器；日志区不透明度不低于 90%。</td></tr>
-          <tr><td>圆角</td><td>8 / 12 / 16 pt</td><td>小控件 8、卡片 12、浮层 16；避免同页面多种不规则圆角。</td></tr>
+          <tr><td>分层材质</td><td>Liquid Glass（工具栏 / 浮层 / 侧栏）+ 实色（数据控制台）</td><td>HIG：控件用玻璃材质区分于内容；数据控制台用实色或高不透明材质，日志区不透明度不低于 90%。</td></tr>
+          <tr><td>圆角</td><td>控件 6 pt / 容器 10 pt</td><td>仅两级：按钮、文本框、分段控件用 6；卡片、面板、控制台、Popover 用 10。自定义控件圆角与所在栏同心（HIG：避免同页面多种不规则圆角）。</td></tr>
           <tr><td>边框</td><td>separator / 18% 透明度</td><td>容器边界、表格、输入框；不用明显投影模拟立体按钮。</td></tr>
-          <tr><td>间距栅格</td><td>4 pt 基数</td><td>常用 8、12、16、20、24、32；同层元素保持一致。</td></tr>
+          <tr><td>间距栅格</td><td>8 pt 栅格（推导值）</td><td>4 / 8 / 16 / 20：图标与文字 4、同组控件 8、组间 16、区块与窗口内容边距 20；同层元素保持一致。</td></tr>
         </tbody></table>
         <h3>2.2 字体与数据呈现</h3>
-        <table><thead><tr><th>用途</th><th>字体与字号</th><th>要求</th></tr></thead><tbody>
-          <tr><td>应用 UI</td><td>SF Pro / 苹方，13–15 pt</td><td>沿用系统动态字号；中文以系统苹方回退。</td></tr>
-          <tr><td>控制台记录</td><td>SF Mono / Menlo，默认 12 pt</td><td>RX/TX、HEX、时间戳均等宽；用户可在设置中调整 10–18 pt。</td></tr>
-          <tr><td>区块标题</td><td>系统 semibold，13–15 pt</td><td>避免全部大写；中英文混排保持自然字距。</td></tr>
-          <tr><td>状态和提示</td><td>系统 medium，12–13 pt</td><td>短、具体、可行动，例如“端口已被占用 · 重新选择或刷新”。</td></tr>
+        <p>字号取自 Apple HIG「macOS built-in text styles」。macOS 不支持 Dynamic Type；本应用的“全局字号”为自定义可访问性扩展，其基值即下表。</p>
+        <table><thead><tr><th>用途</th><th>字体与字号（HIG）</th><th>要求</th></tr></thead><tbody>
+          <tr><td>应用 UI（正文）</td><td>SF Pro Body 13 pt（默认，最小 10 pt）</td><td>中文以系统苹方回退；不使用 Light 及以下字重。</td></tr>
+          <tr><td>区块标题</td><td>Title 2 17 / Title 3 15 / Headline 13（半粗）</td><td>用字重与字号表达层级；避免全部大写。</td></tr>
+          <tr><td>辅助信息</td><td>Callout 12 / Subheadline 11 / Caption 10</td><td>状态与提示短、具体、可行动。</td></tr>
+          <tr><td>控制台记录</td><td>SF Mono / 系统等宽，12 pt</td><td>RX/TX、HEX、时间戳均等宽；随“全局字号”整体缩放。</td></tr>
         </tbody></table>
 
         <h2 id="window">3. 主窗口结构</h2>
@@ -219,6 +221,7 @@
           <tr><td>控制台</td><td>ScrollView + LazyVStack，或高性能文本视图封装</td><td>大量长文本、选择复制、虚拟化可采用 NSTextView 的 NSViewRepresentable。</td></tr>
           <tr><td>配置与编辑</td><td>Form、Picker、TextField、TextEditor、Sheet、Popover</td><td>NSAlert 用于系统风格的破坏性确认和错误处理。</td></tr>
           <tr><td>视觉材质</td><td>Material、controlSize、tint、symbolRenderingMode</td><td>系统版本可用时采用 Glass API；低版本回退 Material。</td></tr>
+          <tr><td>设计令牌</td><td><code>DesignTokens</code>：<code>contentInset=20</code>、<code>controlCornerRadius=6</code>、<code>containerCornerRadius=10</code>、间距 4/8/16/20；<code>AppFontRole</code> 按 HIG 字号（17/15/13/13/12/11/10）</td><td>玻璃封装见 <code>VisualEffectsSupport</code>；标题栏装饰图标用 <code>NSTitlebarAccessoryViewController</code>。</td></tr>
         </tbody></table>
         <div class="callout"><strong>最终验收重点</strong> 任何一个界面状态下，用户都应该能在 1 秒内知道：当前是否已连接、正在看什么格式、自动发送是否运行、日志是否记录，以及下一步能点击什么。若需要阅读大量说明才能判断状态，UI 即不合格。</div>
       </main>

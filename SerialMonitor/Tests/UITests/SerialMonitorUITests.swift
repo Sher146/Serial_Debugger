@@ -34,7 +34,7 @@ final class SerialMonitorUITests: XCTestCase {
     func testBurstScenarioDisplaysIncomingRecordAndClearRemainsAvailable() {
         let app = launch(scenario: "burst")
         connect(app)
-        XCTAssertTrue(element(app, "console.record.RX.4649525354").waitForExistence(timeout: 2))
+        XCTAssertTrue(waitForConsole(app, containing: "FIRST"))
         XCTAssertTrue(button(app, "console.clear").isEnabled)
     }
 
@@ -112,13 +112,11 @@ final class SerialMonitorUITests: XCTestCase {
     func testReceiveFormatSwitchReprojectsRecordsAsHex() {
         let app = launch(scenario: "burst")
         connect(app)
-        let record = element(app, "console.record.RX.4649525354")
-        XCTAssertTrue(record.waitForExistence(timeout: 3))
-        XCTAssertTrue(record.label.contains("FIRST"))
+        XCTAssertTrue(waitForConsole(app, containing: "FIRST"))
 
         selectSegment(app, container: "console.display-format", title: "HEX")
 
-        XCTAssertTrue(waitForLabel(record, containing: "46 49"))
+        XCTAssertTrue(waitForConsole(app, containing: "46 49"))
     }
 
     func testPresetCanBeCreatedSentAndDeleted() {
@@ -141,7 +139,7 @@ final class SerialMonitorUITests: XCTestCase {
 
         let inspector = element(app, "presets.inspector")
         inspector.buttons["发送"].firstMatch.click()
-        XCTAssertTrue(element(app, "console.record.TX.41540D0A").waitForExistence(timeout: 2))
+        XCTAssertTrue(waitForConsole(app, containing: "AT"))
 
         let delete = inspector.descendants(matching: .button)
             .matching(NSPredicate(format: "identifier BEGINSWITH %@", "presets.delete."))
@@ -214,6 +212,20 @@ final class SerialMonitorUITests: XCTestCase {
             XCTAssertTrue(waitForValue(element(app, "session.connection-status"), "connected"), "\(mode) failed to connect")
             app.terminate()
         }
+    }
+
+    func testGlobalFontScaleChangesTextSize() {
+        let standard = launch(scenario: "echo")
+        let standardPlaceholder = element(standard, "presets.placeholder")
+        XCTAssertTrue(standardPlaceholder.waitForExistence(timeout: 5))
+        let baseHeight = standardPlaceholder.frame.height
+        XCTAssertGreaterThan(baseHeight, 0)
+        standard.terminate()
+
+        let enlarged = launch(scenario: "echo", extraArguments: ["-ui-testing-font-scale", "xlarge"])
+        let enlargedPlaceholder = element(enlarged, "presets.placeholder")
+        XCTAssertTrue(enlargedPlaceholder.waitForExistence(timeout: 5))
+        XCTAssertGreaterThan(enlargedPlaceholder.frame.height, baseHeight, "全局字体“特大”应放大文本")
     }
 
     func testCaptureConnectionStateScreenshots() {
@@ -296,8 +308,10 @@ final class SerialMonitorUITests: XCTestCase {
             XCTWaiter.wait(for: [expectation(for: NSPredicate(format: "value == %@", value), evaluatedWith: element)], timeout: timeout) == .completed
     }
 
-    private func waitForLabel(_ element: XCUIElement, containing value: String, timeout: TimeInterval = 2) -> Bool {
-        NSPredicate(format: "label CONTAINS %@", value).evaluate(with: element) ||
-            XCTWaiter.wait(for: [expectation(for: NSPredicate(format: "label CONTAINS %@", value), evaluatedWith: element)], timeout: timeout) == .completed
+    private func waitForConsole(_ app: XCUIApplication, containing value: String, timeout: TimeInterval = 3) -> Bool {
+        let textView = app.textViews["console.records"]
+        guard textView.waitForExistence(timeout: timeout) else { return false }
+        let predicate = NSPredicate(format: "value CONTAINS %@", value)
+        return XCTWaiter.wait(for: [expectation(for: predicate, evaluatedWith: textView)], timeout: timeout) == .completed
     }
 }

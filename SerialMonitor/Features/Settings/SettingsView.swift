@@ -57,7 +57,7 @@ struct SettingsView: View {
 
             VStack(alignment: .leading, spacing: 0) {
                 Text((selection ?? .general).title)
-                    .font(.title2.bold())
+                    .appFont(.title, weight: .bold)
                     .padding(.horizontal, 20)
                     .padding(.top, 16)
                     .padding(.bottom, 4)
@@ -79,8 +79,9 @@ struct SettingsView: View {
         .safeAreaInset(edge: .bottom, spacing: 0) { actionBar }
         .frame(width: 760, height: 560)
         .preferredColorScheme(model.appearance.colorScheme)
-        .dynamicTypeSize(model.fontScale.dynamicTypeSize)
+        .environment(\.appFontScale, model.fontScale)
         .onAppear(perform: reloadDraft)
+        .background(UITestWindowPlacementBridge())
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("settings.window")
         .alert("恢复默认设置？", isPresented: $confirmsReset) {
@@ -122,9 +123,11 @@ struct SettingsView: View {
                 .pickerStyle(.segmented)
                 .accessibilityIdentifier("settings.appearance")
                 Picker("全局字体大小", selection: $draft.fontScale) {
+                    Text("特小").tag(AppFontScale.xSmall)
                     Text("小").tag(AppFontScale.small)
                     Text("标准").tag(AppFontScale.standard)
                     Text("大").tag(AppFontScale.large)
+                    Text("特大").tag(AppFontScale.xLarge)
                 }
                 .pickerStyle(.segmented)
                 .accessibilityIdentifier("settings.font-scale")
@@ -133,7 +136,7 @@ struct SettingsView: View {
                 Button("恢复默认设置…", role: .destructive) { confirmsReset = true }
                     .accessibilityIdentifier("settings.reset")
                 Text("恢复默认只会在点击保存后生效。")
-                    .font(.caption)
+                    .appFont(.caption)
                     .foregroundStyle(.secondary)
             }
         }
@@ -142,15 +145,6 @@ struct SettingsView: View {
     private var display: some View {
         Group {
             Section("控制台") {
-                HStack {
-                    Text("等宽字号")
-                    Spacer()
-                    Stepper(value: $draft.consoleFontSize, in: 10...18, step: 1) {
-                        Text("\(Int(draft.consoleFontSize)) pt")
-                            .monospacedDigit()
-                    }
-                    .accessibilityIdentifier("settings.console-font-size")
-                }
                 Picker("行距", selection: $draft.consoleLineSpacing) {
                     Text("紧凑").tag(ConsoleLineSpacing.compact)
                     Text("标准").tag(ConsoleLineSpacing.standard)
@@ -215,7 +209,7 @@ struct SettingsView: View {
                     Text("128 MB").tag(128 * 1_024 * 1_024)
                 }
                 Text("降低上限会在保存后从最早记录开始裁剪，原始串口连接不会中断。")
-                    .font(.caption)
+                    .appFont(.caption)
                     .foregroundStyle(.secondary)
             }
         }
@@ -253,7 +247,7 @@ struct SettingsView: View {
                     Text("100 MB").tag(Optional(100 * 1_024 * 1_024))
                 }
                 Text("新策略只会在保存后应用于下一次开始的日志。")
-                    .font(.caption)
+                    .appFont(.caption)
                     .foregroundStyle(.secondary)
             }
         }
@@ -265,7 +259,7 @@ struct SettingsView: View {
                 Toggle("恢复上次串口配置", isOn: $draft.restoresLastConfiguration)
                 Toggle("恢复发送草稿和循环参数", isOn: $draft.restoresSendDraft)
                 Text("自动发送只恢复编辑草稿，启动时不会自动开始。")
-                    .font(.caption)
+                    .appFont(.caption)
                     .foregroundStyle(.secondary)
             }
             Section("默认串口参数") {
@@ -309,16 +303,6 @@ extension AppAppearance {
         case .system: nil
         case .light: .light
         case .dark: .dark
-        }
-    }
-}
-
-extension AppFontScale {
-    var dynamicTypeSize: DynamicTypeSize {
-        switch self {
-        case .small: .small
-        case .standard: .large
-        case .large: .xLarge
         }
     }
 }

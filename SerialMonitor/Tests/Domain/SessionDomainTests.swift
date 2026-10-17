@@ -60,10 +60,28 @@ final class SessionDomainTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(DesignTokens.toolbarIconTargetSize, 32)
     }
 
+    func testFontScaleMultipliersIncreaseAndScaleMonoSize() {
+        let scales: [AppFontScale] = [.xSmall, .small, .standard, .large, .xLarge]
+        let multipliers = scales.map(\.multiplier)
+        XCTAssertEqual(multipliers, multipliers.sorted())
+        XCTAssertEqual(Set(multipliers).count, scales.count)
+        XCTAssertEqual(DesignTokens.monoFontSize(scale: .standard), AppFontRole.mono.baseSize)
+        XCTAssertGreaterThan(DesignTokens.monoFontSize(scale: .xLarge), DesignTokens.monoFontSize(scale: .xSmall))
+    }
+
     func testHexEncoderAcceptsWhitespaceAndSeparators() throws {
         XCTAssertEqual(try HexCodec.decode("55 AA,01:00"), Data([0x55, 0xAA, 0x01, 0x00]))
         XCTAssertThrowsError(try HexCodec.decode("5"))
         XCTAssertThrowsError(try HexCodec.decode("ZZ"))
+    }
+
+    func testHexInputFormatterGroupsPairsAndFiltersNoise() {
+        XCTAssertEqual(HexInputFormatter.format("4152"), "41 52")
+        XCTAssertEqual(HexInputFormatter.format("41-52:0a"), "41 52 0a")
+        XCTAssertEqual(HexInputFormatter.format("4"), "4")
+        XCTAssertEqual(HexInputFormatter.format("41 5"), "41 5")
+        XCTAssertEqual(HexInputFormatter.format("zz"), "")
+        XCTAssertEqual(HexInputFormatter.format(""), "")
     }
 
     func testSendEncoderAppendsLineEndingWithoutChangingRawPayload() throws {
