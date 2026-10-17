@@ -102,7 +102,7 @@ xcodebuild \
   build
 ```
 
-日常回归请使用自动化脚本。它按阶段运行 SerialCore、App Unit、PTY 集成与 UI 测试，使用隔离的 DerivedData，并把各阶段日志、`.xcresult`、覆盖率报告与 `summary.json`/`summary.md` 写入 gitignore 的 `TestArtifacts/<时间戳>/`：
+日常回归请使用自动化脚本。它按阶段运行 SerialCore、App Unit、PTY 集成与 UI 测试，使用共享的 `TestArtifacts/DerivedData`，并把各阶段日志、`.xcresult`、覆盖率报告与 `summary.json`/`summary.md` 写入 gitignore 的 `TestArtifacts/<时间戳>/`：
 
 ```zsh
 zsh Scripts/run-automated-tests.zsh            # 默认：SerialCore + 单元/PTY + UI

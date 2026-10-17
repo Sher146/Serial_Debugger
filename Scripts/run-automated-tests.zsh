@@ -56,7 +56,9 @@ done
 
 timestamp=$(date +%Y%m%d-%H%M%S)
 artifact_dir="$repo_root/TestArtifacts/$timestamp"
-derived_data="$artifact_dir/DerivedData"
+# Shared across runs so a full DerivedData is not duplicated (and accumulated)
+# inside every timestamped artifact directory.
+derived_data="$repo_root/TestArtifacts/DerivedData"
 mkdir -p "$artifact_dir"
 
 typeset -a stage_names stage_status stage_logs stage_seconds

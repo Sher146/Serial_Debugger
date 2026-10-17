@@ -62,7 +62,7 @@ zsh Scripts/run-automated-tests.zsh --release  # App 单元/UI 使用 Release �
 ```
 
 - 该脚本是唯一的回归入口。仅使用 mock、PTY 与 `SessionScenarioClient`，**不访问真实串口**。
-- 产物写入 gitignore 的 `TestArtifacts/<时间戳>/`：逐阶段日志、`.xcresult`、覆盖率与 `summary.md/json`。
+- 产物写入 gitignore 的 `TestArtifacts/<时间戳>/`：逐阶段日志、`.xcresult`、覆盖率与 `summary.md/json`；DerivedData 共享于 `TestArtifacts/DerivedData`，不随每次运行复制。`TestArtifacts/` 可随时整体删除。
 - 覆盖率仅记录，不设百分比门禁。覆盖矩阵见 [Docs/AutomatedTestMatrix.md](Docs/AutomatedTestMatrix.md)。
 - 新增 `SerialMonitor/Tests/**` 文件必须手动加入 `SerialMonitor.xcodeproj/project.pbxproj`（工程为显式文件引用，非目录引用）。
 
