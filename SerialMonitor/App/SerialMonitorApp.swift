@@ -12,8 +12,11 @@ struct SerialMonitorApp: App {
         if let scenario = SessionUITestScenario(arguments: ProcessInfo.processInfo.arguments) {
             client = SessionScenarioClient(scenario: scenario)
             // UI tests must not inherit user presets or panel visibility from a
-            // previous manual launch.
-            let defaults = UserDefaults(suiteName: "serial-monitor.ui-test.\(UUID().uuidString)")!
+            // previous manual launch. A single fixed suite, cleared on launch,
+            // avoids accumulating one plist per run in ~/Library/Preferences.
+            let suiteName = "serial-monitor.ui-test"
+            let defaults = UserDefaults(suiteName: suiteName)!
+            defaults.removePersistentDomain(forName: suiteName)
             preferencesStore = PreferencesStore(defaults: defaults, key: "preferences")
             presetStore = PresetStore(defaults: defaults, key: "presets")
             // A deterministic log directory lets the logging toggle run without

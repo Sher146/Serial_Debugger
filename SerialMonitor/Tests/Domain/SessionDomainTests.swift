@@ -5,7 +5,7 @@ import SerialCore
 final class SessionDomainTests: XCTestCase {
     @MainActor
     func testPreferencesMigrateLegacyPayloadWithoutDiscardingValues() throws {
-        let defaults = UserDefaults(suiteName: "serial-monitor-preferences-migration-\(UUID().uuidString)")!
+        let defaults = InMemoryKeyValueStore()
         let key = "legacy"
         let legacy = """
         {"defaultConfiguration":{"path":"/dev/cu.legacy","baudRate":57600,"dataBits":8,"parity":"none","stopBits":1,"flowControl":"none"},"receiveFormat":"hex","sendFormat":"ascii","lineEnding":"lf","showsTimestamps":false,"followsLatest":true,"showsPresets":false,"logFileNamePrefix":"legacy-log"}
@@ -106,8 +106,7 @@ final class SessionDomainTests: XCTestCase {
 
     @MainActor
     func testPresetAndPreferencesStoresRoundTripLocally() {
-        let suite = "serial-monitor-tests.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suite)!
+        let defaults = InMemoryKeyValueStore()
         let presetStore = PresetStore(defaults: defaults, key: "presets")
         let preferencesStore = PreferencesStore(defaults: defaults, key: "preferences")
         let preset = PresetSnapshot(name: "复位", content: "AT+RST", format: .ascii, lineEnding: .crlf)
@@ -159,8 +158,7 @@ final class SessionDomainTests: XCTestCase {
 
     @MainActor
     func testCorruptPreferencesAreBackedUpThenFallBackToDefaults() throws {
-        let suite = "serial-monitor-corrupt-preferences-\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suite)!
+        let defaults = InMemoryKeyValueStore()
         let backupDirectory = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("serial-monitor-recovered-\(UUID().uuidString)", isDirectory: true)
         let key = "preferences"
@@ -178,8 +176,7 @@ final class SessionDomainTests: XCTestCase {
 
     @MainActor
     func testCorruptPresetsAreBackedUpThenFallBackToEmpty() throws {
-        let suite = "serial-monitor-corrupt-presets-\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suite)!
+        let defaults = InMemoryKeyValueStore()
         let backupDirectory = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("serial-monitor-recovered-\(UUID().uuidString)", isDirectory: true)
         let key = "presets"

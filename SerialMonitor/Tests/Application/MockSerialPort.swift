@@ -40,3 +40,26 @@ actor MockSerialPort: SerialPorting {
     func emitEvent(_ event: SerialConnectionEvent) { eventPair.continuation.yield(event) }
     func writes() -> [Data] { writesStorage }
 }
+
+/// In-memory `KeyValueStore` for tests. Unlike `UserDefaults(suiteName:)` it
+/// never writes to `~/Library/Preferences`, so repeated runs cannot accumulate
+/// `serial-monitor-*.plist` files.
+final class InMemoryKeyValueStore: KeyValueStore {
+    private var storage: [String: Any] = [:]
+
+    func data(forKey key: String) -> Data? {
+        storage[key] as? Data
+    }
+
+    func set(_ value: Any?, forKey key: String) {
+        if let value {
+            storage[key] = value
+        } else {
+            storage.removeValue(forKey: key)
+        }
+    }
+
+    func removeObject(forKey key: String) {
+        storage.removeValue(forKey: key)
+    }
+}

@@ -5,7 +5,7 @@ import SerialCore
 @MainActor
 final class SessionViewModelTests: XCTestCase {
     func testSettingsDraftDoesNotChangeLivePreferencesUntilApplied() {
-        let defaults = UserDefaults(suiteName: "serial-monitor-settings-draft-\(UUID().uuidString)")!
+        let defaults = InMemoryKeyValueStore()
         let store = PreferencesStore(defaults: defaults, key: "preferences")
         let viewModel = SessionViewModel(client: SessionClientStub(), preferencesStore: store)
         var draft = viewModel.settingsDraft()
@@ -25,7 +25,7 @@ final class SessionViewModelTests: XCTestCase {
     }
 
     func testDefaultSettingsRequireApplyBeforeTheyAffectTheModel() {
-        let defaults = UserDefaults(suiteName: "serial-monitor-settings-reset-\(UUID().uuidString)")!
+        let defaults = InMemoryKeyValueStore()
         let store = PreferencesStore(defaults: defaults, key: "preferences")
         var persisted = AppPreferences()
         persisted.appearance = .dark
@@ -252,7 +252,7 @@ final class SessionViewModelTests: XCTestCase {
     }
 
     private func makeStores() -> (PreferencesStore, PresetStore) {
-        let defaults = UserDefaults(suiteName: "serial-monitor-viewmodel-\(UUID().uuidString)")!
+        let defaults = InMemoryKeyValueStore()
         return (
             PreferencesStore(defaults: defaults, key: "preferences"),
             PresetStore(defaults: defaults, key: "presets")

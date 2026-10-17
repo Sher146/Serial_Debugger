@@ -527,9 +527,20 @@ struct LogDirectorySelection: Equatable {
     let bookmark: Data?
 }
 
+/// Minimal key/value surface used by the persistence stores. `UserDefaults`
+/// satisfies it in production; tests inject an in-memory implementation so they
+/// never create `~/Library/Preferences` plists.
+protocol KeyValueStore: AnyObject {
+    func data(forKey key: String) -> Data?
+    func set(_ value: Any?, forKey key: String)
+    func removeObject(forKey key: String)
+}
+
+extension UserDefaults: KeyValueStore {}
+
 @MainActor
 final class PreferencesStore {
-    private let defaults: UserDefaults
+    private let defaults: KeyValueStore
     private let key: String
     private let backupDirectory: URL?
     private let fileManager: FileManager
@@ -541,7 +552,7 @@ final class PreferencesStore {
     }
 
     init(
-        defaults: UserDefaults = .standard,
+        defaults: KeyValueStore = UserDefaults.standard,
         key: String = "serial-monitor.preferences.v1",
         backupDirectory: URL? = PreferencesStore.defaultBackupDirectory,
         fileManager: FileManager = .default
@@ -583,7 +594,7 @@ final class PreferencesStore {
 
 @MainActor
 final class PresetStore {
-    private let defaults: UserDefaults
+    private let defaults: KeyValueStore
     private let key: String
     private let backupDirectory: URL?
     private let fileManager: FileManager
@@ -595,7 +606,7 @@ final class PresetStore {
     }
 
     init(
-        defaults: UserDefaults = .standard,
+        defaults: KeyValueStore = UserDefaults.standard,
         key: String = "serial-monitor.presets.v1",
         backupDirectory: URL? = PresetStore.defaultBackupDirectory,
         fileManager: FileManager = .default
