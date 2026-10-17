@@ -74,8 +74,10 @@ DEVELOPMENT_TEAM=<team> bash Scripts/build_release.sh    # 归档并导出
 NOTARY_PROFILE=<profile> bash Scripts/notarize.sh <app>  # 提交/等待/staple
 bash Scripts/verify_release.sh <app>                     # 验签/entitlement/Gatekeeper/公证/无用户数据
 bash Scripts/hardware-smoke.sh --port /dev/cu.<device>   # 实机打开/回环/占用/热拔出
+DIST_OUTPUT=build/dist bash Scripts/build_distribution.sh  # 通用二进制 .zip/.dmg（默认 ad-hoc）
 ```
 
+- GitHub Release：推送 `v*` 标签触发 `.github/workflows/release.yml`，调用 `build_distribution.sh` 上传 `.dmg`/`.zip`；无凭据时为 ad-hoc 且未公证，用户首次打开需放行 Gatekeeper。
 - 凭据只经钥匙串/环境变量提供，**绝不写入仓库或日志**。
 - 无 Developer ID / 公证凭据、无 USB-UART 设备、无旧系统主机时，相关项保持“阻塞/未验证”，不得勾选通过。
 

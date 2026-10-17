@@ -35,6 +35,19 @@
 5. 在 macOS 26 与 macOS 14–25 归档同场景截图；完成 `Docs/RealDeviceTestMatrix.md`。
 6. 全部勾选后生成 RC。
 
+## GitHub Release（可下载安装包）
+
+`.github/workflows/release.yml` 在推送 `v*` 标签时执行 `Scripts/build_distribution.sh`，
+构建 **通用二进制（arm64 + x86_64）** Release 包并上传 `.dmg` 与 `.zip` 到 GitHub Releases。
+
+| 形态 | 命令 | 签名 | 用户首次打开 |
+|---|---|---|---|
+| 可下载发布包（当前） | `git tag v1.0.0 && git push origin v1.0.0` | ad-hoc，未公证 | 需右键打开或 `xattr -dr com.apple.quarantine` |
+| 正式发布 | `build_release.sh` + `notarize.sh` + `verify_release.sh` | Developer ID + 公证 | 直接运行 |
+
+无凭据时 GitHub Release 仍可发布，但“无提示直接运行”未达成，须在 release 说明中标注。
+
+
 ## 跨版本与硬件证据
 
 | 项 | 入口 | 状态 |

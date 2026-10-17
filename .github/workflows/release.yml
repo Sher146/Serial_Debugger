@@ -1,0 +1,80 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "版本号（仅手动触发时需要，例如 1.0.0）"
+        required: false
+        default: "0.0"
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select newest Xcode
+        run: |
+          set -euo pipefail
+          latest="$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1 || true)"
+          if [[ -n "$latest" ]]; then
+            echo "Selecting $latest"
+            sudo xcode-select -s "$latest/Contents/Developer"
+          fi
+          xcodebuild -version
+
+      - name: Determine version
+        id: version
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            v="${GITHUB_REF_NAME#v}"
+          else
+            v="${{ github.event.inputs.version }}"
+          fi
+          [[ -z "$v" ]] && v="0.0"
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          echo "Resolved version: $v"
+
+      - name: Build distribution package
+        env:
+          MARKETING_VERSION: ${{ steps.version.outputs.version }}
+          DIST_OUTPUT: ${{ github.workspace }}/build/dist
+        run: bash Scripts/build_distribution.sh
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', steps.version.outputs.version) }}
+          name: Serial Monitor ${{ steps.version.outputs.version }}
+          generate_release_notes: true
+          files: |
+            build/dist/*.zip
+            build/dist/*.dmg
+          body: |
+            ## 下载安装
+
+            附件包含 `SerialMonitor-<版本>.dmg` 与 `.zip`，支持 Apple Silicon 与 Intel。
+            **最低运行版本 macOS 14**（编译使用 macOS 26 SDK，Liquid Glass 在低版本自动回退为 Material）。
+
+            ### ⚠️ 关于首次打开
+
+            当前发布包为 **ad-hoc 签名、未公证**。受 Gatekeeper 限制，首次打开会提示
+            “无法验证开发者/已损坏”。任选一种方式放行：
+
+            - 访达中 **右键 → 打开 → 仍要打开**；或
+            - 终端执行：`xattr -dr com.apple.quarantine /Applications/SerialMonitor.app`
+
+            要做到下载后无提示直接运行，需要 Apple Developer Program 的
+            **Developer ID 签名 + 公证**（见 `Scripts/build_release.sh` / `Scripts/notarize.sh`）。
+
+            ### 已知限制
+
+            - 未完成真实 USB-UART 设备矩阵验证；串口功能以系统 POSIX/termios 为基线。
+            - macOS 14 的 App 运行时尚未实机验证。

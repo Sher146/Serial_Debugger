@@ -20,6 +20,17 @@
 
 发布脚本（归档/导出/公证/验证）已就绪，但 Developer ID 签名与公证受凭据限制、真实设备兼容性验证受硬件限制，均尚未执行；详见 [发布检查清单](Docs/ReleaseChecklist.md)。
 
+## 下载安装（Release）
+
+在仓库 **Releases** 页面下载 `SerialMonitor-<版本>.dmg`（或 `.zip`），拖入“应用程序”即可，支持 Apple Silicon 与 Intel，最低 macOS 14。
+
+发布包由 `.github/workflows/release.yml` 在推送 `v*` 标签时自动构建并上传。当前为 **ad-hoc 签名、未公证**，首次打开需放行 Gatekeeper：
+
+- 访达中右键 App → **打开** → 仍要打开；或
+- 终端执行 `xattr -dr com.apple.quarantine /Applications/SerialMonitor.app`
+
+要做到下载后无提示直接运行，需要 Developer ID 签名与公证凭据（见下方“发布”）。
+
 ## 环境要求
 
 - 运行最低版本 macOS 14.0；当前已在 macOS 27 本机与 macOS 15 CI 验证，**macOS 14 运行时未验证**
