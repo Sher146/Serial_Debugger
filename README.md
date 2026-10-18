@@ -2,6 +2,10 @@
 
 # Serial Monitor
 
+[![Regression](https://github.com/Sher146/Serial_Debugger/actions/workflows/regression.yml/badge.svg?branch=main)](https://github.com/Sher146/Serial_Debugger/actions/workflows/regression.yml)
+[![Release](https://img.shields.io/github/v/release/Sher146/Serial_Debugger?label=release&color=blue)](https://github.com/Sher146/Serial_Debugger/releases/latest)
+[![Platform](https://img.shields.io/badge/platform-macOS%2014%2B-lightgrey)](#环境要求)
+
 面向 macOS 的单窗口串口监视与调试工具，界面为简体中文。连接串口后即可实时查看收发数据：用 ASCII 或 HEX 阅读、按时间戳定位问题、以手动/循环发送和预设完成日常调试，并把整段会话写入 NDJSON 日志。
 
 原生 SwiftUI 实现，无第三方依赖；发布包为 Apple Silicon 与 Intel 通用二进制，最低运行 macOS 14。
