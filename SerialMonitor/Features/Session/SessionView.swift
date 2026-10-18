@@ -34,11 +34,11 @@ struct SessionView: View {
     @ViewBuilder
     private var workspace: some View {
         if model.showsPresets {
-            HSplitView {
+            HStack(spacing: 0) {
                 ReceiveConsole(model: model)
-                    .frame(minWidth: 700)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 PresetInspector(model: model)
-                    .frame(minWidth: 220, idealWidth: 250, maxWidth: 320)
+                    .frame(width: 320)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
@@ -310,7 +310,7 @@ private struct ReceiveConsole: View {
             }
             .containerSurface()
             .padding(.horizontal, DesignTokens.contentInset)
-            .padding(.bottom, DesignTokens.compactSpacing + 4)
+            .padding(.vertical, DesignTokens.panelVerticalSpacing)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -359,6 +359,7 @@ private struct ConsoleToolbar: View {
         }
         .padding(.horizontal, DesignTokens.contentInset)
         .frame(height: DesignTokens.barHeight)
+        .padding(.top, DesignTokens.panelVerticalSpacing)
         .background(.bar)
     }
 }
@@ -693,9 +694,7 @@ private struct SendEditor: View {
                 Spacer()
             }
             .padding(.horizontal, DesignTokens.contentInset)
-            .frame(height: 36)
-            .fixedSize(horizontal: false, vertical: true)
-            .layoutPriority(1)
+            .frame(height: DesignTokens.barHeight)
             .background(.bar)
 
             HStack(alignment: .bottom, spacing: DesignTokens.standardSpacing) {
@@ -728,7 +727,7 @@ private struct SendEditor: View {
                 .accessibilityIdentifier("send.button")
             }
             .padding(.horizontal, DesignTokens.contentInset)
-            .padding(.vertical, DesignTokens.compactSpacing + 4)
+            .padding(.vertical, DesignTokens.panelVerticalSpacing)
 
             HStack(spacing: DesignTokens.compactSpacing) {
                 Label("自动发送", systemImage: "repeat")
@@ -755,7 +754,7 @@ private struct SendEditor: View {
                 Spacer()
             }
             .padding(.horizontal, DesignTokens.contentInset)
-            .padding(.bottom, DesignTokens.compactSpacing + 4)
+            .padding(.bottom, DesignTokens.panelVerticalSpacing)
 
             if let error = model.sendValidationError {
                 Label(error.localizedDescription, systemImage: "exclamationmark.triangle.fill")
@@ -789,69 +788,86 @@ private struct PresetInspector: View {
                 .labelStyle(.iconOnly)
                 .accessibilityIdentifier("presets.add")
             }
-            .padding(.horizontal, 4)
+            .padding(.leading, DesignTokens.compactSpacing + 4)
+            .padding(.trailing, DesignTokens.contentInset + DesignTokens.compactSpacing + 4)
             .frame(height: DesignTokens.barHeight)
+            .padding(.top, DesignTokens.panelVerticalSpacing)
             .background(.bar)
 
-            if model.presets.isEmpty {
-                VStack(spacing: DesignTokens.compactSpacing) {
-                    ContentUnavailableView("暂无预设", systemImage: "tray", description: Text("新建后可单次发送或循环发送"))
-                    Text("预设检查器为空")
-                        .appFont(.caption)
-                        .foregroundStyle(.secondary)
-                        .accessibilityIdentifier("presets.placeholder")
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                List(model.presets) { preset in
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(preset.name).appFont(.headline)
-                        Text(preset.content)
-                            .appFont(.mono)
-                            .lineLimit(2)
-                            .truncationMode(.tail)
-                            .textSelection(.enabled)
-                            .help(preset.content)
-                            .accessibilityIdentifier("presets.content.\(preset.id.uuidString)")
-                        Text("\(preset.format.rawValue.uppercased()) · \(preset.lineEnding.rawValue.uppercased())")
+            Group {
+                if model.presets.isEmpty {
+                    VStack(spacing: DesignTokens.compactSpacing) {
+                        ContentUnavailableView("暂无预设", systemImage: "tray", description: Text("新建后可单次发送或循环发送"))
+                        Text("预设检查器为空")
                             .appFont(.caption)
                             .foregroundStyle(.secondary)
-                        HStack(spacing: 8) {
-                            Button("发送") { model.sendPreset(preset) }
-                                .disabled(!model.isConnected)
-                            Button(model.isAutoSending ? "停止" : "循环") {
-                                model.isAutoSending ? model.stopAutoSend() : model.startPresetAutoSend(preset)
-                            }
-                            .disabled(!model.isConnected && !model.isAutoSending)
-                            Button("编辑") { editor = PresetEditorState(preset: preset) }
-                            Button("删除", role: .destructive) { model.deletePreset(preset) }
-                                .accessibilityIdentifier("presets.delete.\(preset.id.uuidString)")
-                        }
-                        .buttonStyle(.borderless)
+                            .accessibilityIdentifier("presets.placeholder")
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, DesignTokens.compactSpacing + 4)
-                    .padding(.vertical, DesignTokens.compactSpacing)
-                    .containerSurface()
-                    .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
-                    .listRowBackground(Color.clear)
-                    .contextMenu {
-                        Button("删除", role: .destructive) { model.deletePreset(preset) }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    List(Array(model.presets.enumerated()), id: \.element.id) { index, preset in
+                        presetRow(preset, isLast: index == model.presets.count - 1)
                     }
-                    .accessibilityElement(children: .contain)
+                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
                 }
-                .listStyle(.plain)
             }
+            .containerSurface()
+            .padding(.leading, 0)
+            .padding(.trailing, DesignTokens.contentInset)
+            .padding(.vertical, DesignTokens.panelVerticalSpacing)
         }
         .frame(maxHeight: .infinity, alignment: .top)
-        .background(.bar)
-        .padding(.bottom, DesignTokens.compactSpacing + 4)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("presets.inspector")
         .sheet(item: $editor) { state in
             PresetEditorSheet(state: state, model: model)
         }
+    }
+
+    private func presetRow(_ preset: PresetSnapshot, isLast: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(preset.name).appFont(.headline)
+                Text(preset.content)
+                    .appFont(.mono)
+                    .lineLimit(2)
+                    .truncationMode(.tail)
+                    .textSelection(.enabled)
+                    .help(preset.content)
+                    .accessibilityIdentifier("presets.content.\(preset.id.uuidString)")
+                Text("\(preset.format.rawValue.uppercased()) · \(preset.lineEnding.rawValue.uppercased())")
+                    .appFont(.caption)
+                    .foregroundStyle(.secondary)
+                HStack(spacing: 8) {
+                    Button("发送") { model.sendPreset(preset) }
+                        .disabled(!model.isConnected)
+                    Button(model.isAutoSending ? "停止" : "循环") {
+                        model.isAutoSending ? model.stopAutoSend() : model.startPresetAutoSend(preset)
+                    }
+                    .disabled(!model.isConnected && !model.isAutoSending)
+                    Button("编辑") { editor = PresetEditorState(preset: preset) }
+                    Button("删除", role: .destructive) { model.deletePreset(preset) }
+                        .accessibilityIdentifier("presets.delete.\(preset.id.uuidString)")
+                }
+                .buttonStyle(.borderless)
+            }
+            .padding(.vertical, DesignTokens.compactSpacing)
+
+            if !isLast {
+                Divider()
+                    .padding(.horizontal, DesignTokens.compactSpacing)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+        .listRowSeparator(.hidden)
+        .listRowInsets(EdgeInsets(top: 0, leading: DesignTokens.compactSpacing + 4, bottom: 0, trailing: DesignTokens.compactSpacing + 4))
+        .listRowBackground(Color.clear)
+        .contextMenu {
+            Button("删除", role: .destructive) { model.deletePreset(preset) }
+        }
+        .accessibilityElement(children: .contain)
     }
 }
 

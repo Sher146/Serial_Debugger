@@ -80,6 +80,8 @@ extension View {
 enum DesignTokens {
     /// 8 pt grid: related controls 8, groups 16, sections/window content margin 20.
     static let compactSpacing: CGFloat = 8
+    /// Shared vertical inset between console/send controls and their surfaces.
+    static let panelVerticalSpacing: CGFloat = 2
     static let standardSpacing: CGFloat = 16
     static let sectionSpacing: CGFloat = 20
     /// Single horizontal inset shared by every toolbar/panel/row so left edges align.

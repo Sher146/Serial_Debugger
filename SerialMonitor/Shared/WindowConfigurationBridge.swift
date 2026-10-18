@@ -22,6 +22,7 @@ struct WindowMinimumSizeBridge: NSViewRepresentable {
         // places the console and preset toolbars underneath the window toolbar.
         window.styleMask.remove(.fullSizeContentView)
         window.contentMinSize = minimumSize
+        window.isMovableByWindowBackground = true
     }
 }
 
