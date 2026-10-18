@@ -25,6 +25,8 @@ actor SessionCoordinator: SessionClient {
     private var sendContinuations: [UUID: CheckedContinuation<SendResult, Never>] = [:]
     private var pendingRecordEvents: [CommunicationRecord] = []
     private var recordBatchTask: Task<Void, Never>?
+    private var statusFlushTask: Task<Void, Never>?
+    private let statusFlushInterval: Duration = .milliseconds(100)
 
     init(
         serialPort: any SerialPorting,
@@ -187,6 +189,8 @@ actor SessionCoordinator: SessionClient {
     }
 
     func shutdown() async {
+        statusFlushTask?.cancel()
+        statusFlushTask = nil
         portMonitorTask?.cancel()
         portMonitorTask = nil
         await disconnect()
@@ -285,7 +289,7 @@ actor SessionCoordinator: SessionClient {
         await logService.append(record)
         await queueRecordEvent(record)
         sendContinuations.removeValue(forKey: recordID)?.resume(returning: result)
-        await eventHub.publish(.logStatusChanged(await logService.currentStatus()))
+        scheduleStatusFlush()
     }
 
     private func appendRecord(_ record: CommunicationRecord) async {
@@ -294,6 +298,22 @@ actor SessionCoordinator: SessionClient {
             await logService.append(record)
         }
         await queueRecordEvent(record)
+        scheduleStatusFlush()
+    }
+
+    /// Coalesces the high-frequency statistics/log-status projections so a
+    /// streaming device does not trigger one SwiftUI update per record.
+    private func scheduleStatusFlush() {
+        guard statusFlushTask == nil else { return }
+        statusFlushTask = Task { [weak self, statusFlushInterval] in
+            try? await Task.sleep(for: statusFlushInterval)
+            await self?.flushStatus()
+        }
+    }
+
+    private func flushStatus() async {
+        statusFlushTask?.cancel()
+        statusFlushTask = nil
         await eventHub.publish(.statisticsChanged(await recordStore.statistics()))
         await eventHub.publish(.logStatusChanged(await logService.currentStatus()))
     }

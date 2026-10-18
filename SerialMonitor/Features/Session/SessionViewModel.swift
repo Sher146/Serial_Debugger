@@ -7,7 +7,11 @@ import SerialCore
 final class SessionViewModel: ObservableObject {
     @Published private(set) var ports: [SerialPortDescriptor] = []
     @Published private(set) var sessionState: SessionState = .disconnected
-    @Published private(set) var visibleRecords: [CommunicationRecord] = []
+    /// Bumped once per received batch instead of publishing the whole array, so a
+    /// streaming device does not trigger one view update per record.
+    @Published private(set) var recordsRevision = 0
+    private(set) var visibleRecords: [CommunicationRecord] = []
+    private var recordIndexByID: [UUID: Int] = [:]
     @Published private(set) var statistics: RecordStatistics?
     @Published private(set) var logStatus: LogStatus = .inactive
     @Published private(set) var autoSendStatus: AutoSendStatus = .inactive
@@ -309,14 +313,16 @@ final class SessionViewModel: ObservableObject {
     func togglePause() {
         isPaused.toggle()
         if !isPaused {
-            pausedRecordEvents.forEach(applyRecord)
+            applyRecords(pausedRecordEvents)
             pausedRecordEvents.removeAll(keepingCapacity: true)
         }
     }
 
     func clearRecords() {
         visibleRecords.removeAll(keepingCapacity: true)
+        recordIndexByID.removeAll(keepingCapacity: true)
         pausedRecordEvents.removeAll(keepingCapacity: true)
+        recordsRevision &+= 1
         Task { await client.clearRecords() }
     }
 
@@ -338,7 +344,7 @@ final class SessionViewModel: ObservableObject {
             if isPaused {
                 pausedRecordEvents.append(contentsOf: records)
             } else {
-                records.forEach(applyRecord)
+                applyRecords(records)
             }
         case .statisticsChanged(let statistics):
             self.statistics = statistics
@@ -353,11 +359,29 @@ final class SessionViewModel: ObservableObject {
         }
     }
 
-    private func applyRecord(_ record: CommunicationRecord) {
-        if let index = visibleRecords.firstIndex(where: { $0.id == record.id }) {
-            visibleRecords[index] = record
-        } else {
-            visibleRecords.append(record)
+    private func applyRecords(_ batch: [CommunicationRecord]) {
+        guard !batch.isEmpty else { return }
+        for record in batch {
+            if let index = recordIndexByID[record.id] {
+                visibleRecords[index] = record
+            } else {
+                recordIndexByID[record.id] = visibleRecords.count
+                visibleRecords.append(record)
+            }
+        }
+        trimVisibleRecordsIfNeeded()
+        recordsRevision &+= 1
+    }
+
+    private func trimVisibleRecordsIfNeeded() {
+        let limit = max(1, maximumRecords)
+        // Trim in chunks so the O(n) removal is amortized instead of per record.
+        let slack = max(1_000, limit / 10)
+        guard visibleRecords.count > limit + slack else { return }
+        visibleRecords.removeFirst(visibleRecords.count - limit)
+        recordIndexByID.removeAll(keepingCapacity: true)
+        for (index, record) in visibleRecords.enumerated() {
+            recordIndexByID[record.id] = index
         }
     }
 

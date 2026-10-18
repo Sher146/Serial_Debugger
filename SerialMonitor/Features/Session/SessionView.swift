@@ -13,7 +13,6 @@ struct SessionView: View {
                 .layoutPriority(1)
                 .clipped()
             SendEditor(model: model)
-                .frame(height: 188)
 
             SessionStatusBar(model: model)
                 .frame(height: 28)
@@ -264,6 +263,7 @@ private struct ReceiveConsole: View {
     @Environment(\.appFontScale) private var fontScale
 
     var body: some View {
+        let revision = model.recordsRevision
         VStack(spacing: 0) {
             ConsoleToolbar(model: model)
 
@@ -287,6 +287,7 @@ private struct ReceiveConsole: View {
             ZStack {
                 ConsoleTextView(
                     records: model.visibleRecords,
+                    revision: revision,
                     format: model.receiveFormat,
                     showsTimestamp: model.showsTimestamps,
                     textEncoding: model.textEncoding,
@@ -309,7 +310,7 @@ private struct ReceiveConsole: View {
             }
             .containerSurface()
             .padding(.horizontal, DesignTokens.contentInset)
-            .padding(.bottom, DesignTokens.contentInset)
+            .padding(.bottom, DesignTokens.compactSpacing + 4)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -435,6 +436,7 @@ private struct ConsoleLineAssembler {
 /// native wrapping and cross-line selection/copy, and appends incrementally.
 private struct ConsoleTextView: NSViewRepresentable {
     let records: [CommunicationRecord]
+    let revision: Int
     let format: DisplayFormat
     let showsTimestamp: Bool
     let textEncoding: TextEncodingPreference
@@ -455,6 +457,8 @@ private struct ConsoleTextView: NSViewRepresentable {
         textView.isVerticallyResizable = true
         textView.isHorizontallyResizable = false
         textView.textContainer?.widthTracksTextView = true
+        // Avoid relaying out the entire (potentially huge) document on each append.
+        textView.layoutManager?.allowsNonContiguousLayout = true
         textView.setAccessibilityIdentifier("console.records")
         context.coordinator.textView = textView
         return scrollView
@@ -481,6 +485,9 @@ private struct ConsoleTextView: NSViewRepresentable {
         private var lastRenderedID: UUID?
         private var renderKey = ""
         private var committedLength = 0
+        private var scrollScheduled = false
+        /// Soft cap on rendered characters; old text is trimmed from the top.
+        private let maximumCharacters = 2_000_000
         private let formatter: DateFormatter = {
             let formatter = DateFormatter()
             formatter.dateFormat = "HH:mm:ss.SSS"
@@ -537,8 +544,37 @@ private struct ConsoleTextView: NSViewRepresentable {
             renderedCount = records.count
             lastRenderedID = records.last?.id
             if followsLatest {
+                scheduleScrollToEnd()
+            }
+        }
+
+        /// Coalesce follow-scrolling to at most once per runloop turn and never
+        /// steal the scroll position while the user is selecting text.
+        private func scheduleScrollToEnd() {
+            guard !scrollScheduled else { return }
+            scrollScheduled = true
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.scrollScheduled = false
+                guard let textView = self.textView else { return }
+                guard textView.selectedRange().length == 0 else { return }
                 textView.scrollToEndOfDocument(nil)
             }
+        }
+
+        private func trimIfNeeded(_ storage: NSTextStorage) {
+            guard storage.length > maximumCharacters else { return }
+            // Trim to half the cap so the O(n) edit is amortized.
+            let target = storage.length - maximumCharacters / 2
+            let string = storage.string as NSString
+            var cut = target
+            let searchRange = NSRange(location: target, length: min(4_096, string.length - target))
+            let newline = string.range(of: "\n", options: [], range: searchRange)
+            if newline.location != NSNotFound {
+                cut = newline.location + newline.length
+            }
+            storage.deleteCharacters(in: NSRange(location: 0, length: cut))
+            committedLength = max(0, committedLength - cut)
         }
 
         private func rebuild(
@@ -565,6 +601,7 @@ private struct ConsoleTextView: NSViewRepresentable {
             if let pending = assembler.pendingLine(format: format, encoding: textEncoding) {
                 storage.append(attributed(pending, font: font, paragraph: paragraph, showsTimestamp: showsTimestamp))
             }
+            trimIfNeeded(storage)
             storage.endEditing()
         }
 
@@ -594,6 +631,7 @@ private struct ConsoleTextView: NSViewRepresentable {
             if let pending = assembler.pendingLine(format: format, encoding: textEncoding) {
                 storage.append(attributed(pending, font: font, paragraph: paragraph, showsTimestamp: showsTimestamp))
             }
+            trimIfNeeded(storage)
             storage.endEditing()
         }
 
@@ -678,7 +716,7 @@ private struct SendEditor: View {
                             .allowsHitTesting(false)
                     }
                 }
-                .frame(minHeight: 82, maxHeight: 110)
+                .frame(height: 96)
                 .containerSurface(cornerRadius: DesignTokens.controlCornerRadius)
 
                 Button(L10n.send, systemImage: "paperplane.fill") {
@@ -690,7 +728,7 @@ private struct SendEditor: View {
                 .accessibilityIdentifier("send.button")
             }
             .padding(.horizontal, DesignTokens.contentInset)
-            .padding(.vertical, 8)
+            .padding(.vertical, DesignTokens.compactSpacing + 4)
 
             HStack(spacing: DesignTokens.compactSpacing) {
                 Label("自动发送", systemImage: "repeat")
@@ -717,7 +755,7 @@ private struct SendEditor: View {
                 Spacer()
             }
             .padding(.horizontal, DesignTokens.contentInset)
-            .padding(.bottom, 6)
+            .padding(.bottom, DesignTokens.compactSpacing + 4)
 
             if let error = model.sendValidationError {
                 Label(error.localizedDescription, systemImage: "exclamationmark.triangle.fill")
@@ -808,6 +846,7 @@ private struct PresetInspector: View {
         }
         .frame(maxHeight: .infinity, alignment: .top)
         .background(.bar)
+        .padding(.bottom, DesignTokens.compactSpacing + 4)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("presets.inspector")
         .sheet(item: $editor) { state in
