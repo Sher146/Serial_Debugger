@@ -72,7 +72,7 @@ rm -f "$zip" "$dmg"
 
 echo "==> 打包 .zip 与 .dmg"
 ditto -c -k --keepParent "$app" "$zip"
-hdiutil create -volname "SerialMonitor" -srcfolder "$app" -ov -format UDZO "$dmg" >/dev/null
+bash "$script_dir/create_dmg.sh" "$app" "$dmg"
 
 echo "APP=$app"
 echo "ZIP=$zip"

@@ -59,6 +59,32 @@ final class SerialMonitorUITests: XCTestCase {
         XCTAssertGreaterThanOrEqual(app.windows.firstMatch.frame.height, 680)
     }
 
+    func testPresetAndSendSurfacesStayAligned() {
+        let app = launch(scenario: "echo")
+        ensurePresetInspector(app)
+        assertWorkspaceAlignment(app)
+
+        button(app, "session.presets-toggle").click()
+        XCTAssertFalse(element(app, "presets.surface").waitForExistence(timeout: 1))
+        button(app, "session.presets-toggle").click()
+        assertWorkspaceAlignment(app)
+        attachScreenshot(app, named: "workspace-aligned")
+    }
+
+    func testWorkspaceAlignmentWithLargeFontAndValidationError() {
+        let app = launch(scenario: "echo", extraArguments: ["-ui-testing-font-scale", "xlarge"])
+        connect(app)
+        ensurePresetInspector(app)
+        assertWorkspaceAlignment(app)
+        selectSegment(app, container: "send.format", title: "HEX")
+        let editor = app.textViews["send.editor"].firstMatch
+        editor.click()
+        editor.typeText("0")
+        XCTAssertTrue(element(app, "send.validation-error").waitForExistence(timeout: 2))
+        assertWorkspaceAlignment(app)
+        attachScreenshot(app, named: "workspace-aligned-validation")
+    }
+
     func testToolbarProvidesWidePortPickerAndLargeIconTargets() {
         let app = launch(scenario: "echo")
         let portPicker = element(app, "session.port-picker")
@@ -138,7 +164,7 @@ final class SerialMonitorUITests: XCTestCase {
         XCTAssertTrue(preset.waitForExistence(timeout: 3))
 
         let inspector = element(app, "presets.inspector")
-        inspector.buttons["发送"].firstMatch.click()
+        preset.firstMatch.click()
         XCTAssertTrue(waitForConsole(app, containing: "AT"))
 
         let delete = inspector.descendants(matching: .button)
@@ -174,6 +200,39 @@ final class SerialMonitorUITests: XCTestCase {
         XCTAssertEqual(button(app, "auto-send.toggle").label, "停止循环")
 
         button(app, "auto-send.toggle").click()
+        XCTAssertFalse(element(app, "auto-send.status").waitForExistence(timeout: 2))
+    }
+
+    func testAutoSendFieldsInMergedToolbar() {
+        let app = launch(scenario: "auto-send", extraArguments: ["-ui-testing-font-scale", "xlarge"])
+        connect(app)
+        ensurePresetInspector(app)
+        let toolbar = element(app, "send.toolbar")
+        let interval = app.textFields["auto-send.interval"].firstMatch
+        let count = app.textFields["auto-send.count"].firstMatch
+        let toggle = button(app, "auto-send.toggle")
+        XCTAssertTrue(toolbar.waitForExistence(timeout: 3))
+        for control in [interval, count, toggle, element(app, "send.format"), element(app, "send.line-ending")] {
+            XCTAssertTrue(control.exists)
+            XCTAssertGreaterThanOrEqual(control.frame.minX, toolbar.frame.minX - 1)
+            XCTAssertLessThanOrEqual(control.frame.maxX, toolbar.frame.maxX + 1)
+            XCTAssertEqual(control.frame.midY, toolbar.frame.midY, accuracy: 2)
+        }
+        XCTAssertLessThanOrEqual(interval.frame.maxX, count.frame.minX)
+        XCTAssertLessThanOrEqual(count.frame.maxX, toggle.frame.minX)
+        XCTAssertFalse(button(app, "auto-send.settings-toggle").exists)
+        count.click()
+        count.typeText("20")
+        XCTAssertEqual(count.value as? String, "20")
+
+        let editor = app.textViews["send.editor"].firstMatch
+        editor.click()
+        editor.typeText("AT")
+        toggle.click()
+        XCTAssertTrue(element(app, "auto-send.status").waitForExistence(timeout: 3))
+        assertWorkspaceAlignment(app)
+        attachScreenshot(app, named: "merged-send-toolbar-running")
+        toggle.click()
         XCTAssertFalse(element(app, "auto-send.status").waitForExistence(timeout: 2))
     }
 
@@ -266,6 +325,28 @@ final class SerialMonitorUITests: XCTestCase {
             button(app, "session.presets-toggle").click()
             XCTAssertTrue(element(app, "presets.inspector").waitForExistence(timeout: 2))
         }
+    }
+
+    private func assertWorkspaceAlignment(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+        let console = element(app, "console.surface")
+        let presets = element(app, "presets.surface")
+        let editor = element(app, "send.surface")
+        let send = button(app, "send.button")
+        for surface in [console, presets, editor, send] {
+            XCTAssertTrue(surface.waitForExistence(timeout: 3), file: file, line: line)
+            XCTAssertGreaterThan(surface.frame.height, 0, file: file, line: line)
+        }
+        let aligned = NSPredicate { _, _ in
+            abs(presets.frame.minY - console.frame.minY) <= 1 &&
+                abs(presets.frame.maxY - editor.frame.maxY) <= 1 &&
+                abs(send.frame.minY - editor.frame.minY) <= 1 &&
+                abs(send.frame.maxY - editor.frame.maxY) <= 1
+        }
+        XCTAssertTrue(
+            XCTWaiter.wait(for: [expectation(for: aligned, evaluatedWith: app)], timeout: 3) == .completed,
+            "Surface alignment: console=\(console.frame), presets=\(presets.frame), editor=\(editor.frame), send=\(send.frame)",
+            file: file, line: line
+        )
     }
 
     private func selectSegment(_ app: XCUIApplication, container identifier: String, title: String) {

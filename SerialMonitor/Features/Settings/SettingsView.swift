@@ -32,6 +32,7 @@ private enum SettingsSection: String, CaseIterable, Identifiable {
 struct SettingsView: View {
     @ObservedObject private var model: SessionViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     @State private var selection: SettingsSection? = .general
     @State private var draft: AppPreferences
     @State private var baseline: AppPreferences
@@ -46,12 +47,27 @@ struct SettingsView: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            List(SettingsSection.allCases, selection: $selection) { section in
-                Label(section.title, systemImage: section.symbol)
-                    .tag(section)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(L10n.appName)
+                    .appFont(.title, weight: .bold)
+                    .padding(.horizontal, DesignTokens.contentInset)
+                    .padding(.vertical, 16)
+
+                List(SettingsSection.allCases, selection: $selection) { section in
+                    Label(section.title, systemImage: section.symbol)
+                        .tag(section)
+                }
+                .listStyle(.sidebar)
+                .scrollContentBackground(.hidden)
             }
-            .listStyle(.sidebar)
+            .padding(.top, 44)
             .frame(width: 200)
+            .frame(maxHeight: .infinity)
+            .background(colorScheme == .dark ? Color(white: 0.16) : Color(white: 0.94))
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("settings.sidebar")
+
+            Divider()
 
             VStack(alignment: .leading, spacing: 0) {
                 Text((selection ?? .general).title)
@@ -71,14 +87,19 @@ struct SettingsView: View {
                     }
                 }
                 .formStyle(.grouped)
+
+                actionBar
             }
+            .padding(.top, 44)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) { actionBar }
-        .frame(width: 760, height: 560)
+        .frame(width: 760)
+        .frame(minHeight: 560, maxHeight: .infinity)
+        .ignoresSafeArea(.container, edges: .vertical)
         .preferredColorScheme(model.appearance.colorScheme)
         .environment(\.appFontScale, model.fontScale)
         .onAppear(perform: reloadDraft)
+        .background(SettingsWindowConfigurationBridge())
         .background(UITestWindowPlacementBridge())
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("settings.window")

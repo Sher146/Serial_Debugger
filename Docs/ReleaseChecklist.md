@@ -40,6 +40,20 @@
 `.github/workflows/release.yml` 在推送 `v*` 标签时执行 `Scripts/build_distribution.sh`，
 构建 **通用二进制（arm64 + x86_64）** Release 包并上传 `.dmg` 与 `.zip` 到 GitHub Releases。
 
+DMG 使用浅灰色中文引导背景、固定大图标位置与 Applications 快捷入口。背景由
+`Scripts/render_dmg_background.swift` 使用 AppKit 生成，无第三方依赖；
+`Scripts/create_dmg.sh` 使用 Finder 保存窗口布局，再压缩为只读磁盘映像。
+打包环境需要可用的图形登录会话，并允许终端/构建进程通过自动化控制 Finder；
+若系统询问该权限，须允许。Finder 不可用时打包会失败，不会降级为无引导的普通窗口。
+新流程的 GitHub 托管 runner 执行尚未验证。
+
+仅预览安装界面时，可复用已有应用，不必重新编译或运行自动化测试：
+
+```zsh
+bash Scripts/create_dmg.sh <已有的SerialMonitor.app路径> build/SerialMonitor-preview.dmg
+open build/SerialMonitor-preview.dmg
+```
+
 | 形态 | 命令 | 签名 | 用户首次打开 |
 |---|---|---|---|
 | 可下载发布包（当前） | `git tag v1.0.0 && git push origin v1.0.0` | ad-hoc，未公证 | 需右键打开或 `xattr -dr com.apple.quarantine` |

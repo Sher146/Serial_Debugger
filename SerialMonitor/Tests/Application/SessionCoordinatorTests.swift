@@ -59,7 +59,7 @@ final class SessionCoordinatorTests: XCTestCase {
         XCTAssertEqual(statistics.receivedByteCount, 2)
     }
 
-    func testClearRecordsRetainsLifetimeTrafficCounters() async throws {
+    func testClearRecordsResetsTrafficCounters() async throws {
         let serial = MockSerialPort()
         let coordinator = SessionCoordinator(serialPort: serial)
         await coordinator.connect(configuration: SerialConfiguration(path: "/dev/cu.mock"))
@@ -70,7 +70,7 @@ final class SessionCoordinatorTests: XCTestCase {
         let statistics = await coordinator.statisticsSnapshot()
         XCTAssertEqual(statistics.recordCount, 0)
         XCTAssertEqual(statistics.storedByteCount, 0)
-        XCTAssertEqual(statistics.transmittedByteCount, 2)
+        XCTAssertEqual(statistics.transmittedByteCount, 0)
     }
 
     func testUpdatingRecordLimitsTrimsExistingRecordsAndPublishesStatistics() async throws {

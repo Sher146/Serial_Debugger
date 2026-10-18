@@ -423,6 +423,8 @@ actor RecordStore {
     func clear() {
         records.removeAll(keepingCapacity: true)
         storedByteCount = 0
+        receivedByteCount = 0
+        transmittedByteCount = 0
     }
 
     func updateLimits(maximumRecords: Int, maximumBytes: Int) {

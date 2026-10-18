@@ -1,6 +1,35 @@
 import AppKit
 import SwiftUI
 
+struct SettingsWindowConfigurationBridge: NSViewRepresentable {
+    final class WindowView: NSView {
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            configureWindow()
+        }
+
+        func configureWindow() {
+            guard let window else { return }
+            window.styleMask.insert(.fullSizeContentView)
+            window.titleVisibility = .hidden
+            window.titlebarAppearsTransparent = true
+            window.titlebarSeparatorStyle = .none
+            window.toolbar = nil
+            window.isMovableByWindowBackground = true
+        }
+    }
+
+    func makeNSView(context: Context) -> WindowView {
+        WindowView()
+    }
+
+    func updateNSView(_ nsView: WindowView, context: Context) {
+        DispatchQueue.main.async { [weak nsView] in
+            nsView?.configureWindow()
+        }
+    }
+}
+
 struct WindowMinimumSizeBridge: NSViewRepresentable {
     let minimumSize: NSSize
 
@@ -21,8 +50,14 @@ struct WindowMinimumSizeBridge: NSViewRepresentable {
         // macOS 26 SwiftUI windows default to a full-size content view, which
         // places the console and preset toolbars underneath the window toolbar.
         window.styleMask.remove(.fullSizeContentView)
+        window.titlebarSeparatorStyle = .none
         window.contentMinSize = minimumSize
         window.isMovableByWindowBackground = true
+        for delay in [0.15, 0.4, 0.9] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak window] in
+                window?.titlebarSeparatorStyle = .none
+            }
+        }
     }
 }
 

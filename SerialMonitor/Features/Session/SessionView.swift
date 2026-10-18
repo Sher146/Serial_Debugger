@@ -12,7 +12,6 @@ struct SessionView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .layoutPriority(1)
                 .clipped()
-            SendEditor(model: model)
 
             SessionStatusBar(model: model)
                 .frame(height: 28)
@@ -33,17 +32,41 @@ struct SessionView: View {
 
     @ViewBuilder
     private var workspace: some View {
-        if model.showsPresets {
+        VStack(spacing: 0) {
             HStack(spacing: 0) {
-                ReceiveConsole(model: model)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                PresetInspector(model: model)
-                    .frame(width: 320)
+                VStack(spacing: 0) {
+                    ReceiveConsole(model: model)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    SendEditor(model: model)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                if model.showsPresets {
+                    PresetInspector(model: model)
+                        .frame(width: 320)
+                        .frame(maxHeight: .infinity)
+                        .transition(.move(edge: .trailing).combined(with: .opacity))
+                }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else {
-            ReceiveConsole(model: model)
+
+            if let error = model.sendValidationError {
+                HStack(spacing: 0) {
+                    Label(error.localizedDescription, systemImage: "exclamationmark.triangle.fill")
+                        .appFont(.caption)
+                        .foregroundStyle(Color.sessionError)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, DesignTokens.contentInset)
+                        .padding(.bottom, DesignTokens.compactSpacing)
+                        .accessibilityIdentifier("send.validation-error")
+                    if model.showsPresets {
+                        Color.clear.frame(width: 320)
+                    }
+                }
+                .fixedSize(horizontal: false, vertical: true)
+            }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .animation(.easeInOut(duration: 0.22), value: model.showsPresets)
     }
 }
 
@@ -309,6 +332,8 @@ private struct ReceiveConsole: View {
                 }
             }
             .containerSurface()
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("console.surface")
             .padding(.horizontal, DesignTokens.contentInset)
             .padding(.vertical, DesignTokens.panelVerticalSpacing)
         }
@@ -669,33 +694,7 @@ private struct SendEditor: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: DesignTokens.standardSpacing) {
-                Text(L10n.send).appFont(.headline)
-                Picker("", selection: $model.sendFormat) {
-                    Text("ASCII").tag(DisplayFormat.ascii)
-                    Text("HEX").tag(DisplayFormat.hex)
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .frame(width: 120)
-                .accessibilityLabel("发送格式")
-                .accessibilityIdentifier("send.format")
-                Menu {
-                    Button(L10n.none) { model.lineEnding = .none }
-                    Button("CR") { model.lineEnding = .cr }
-                    Button("LF") { model.lineEnding = .lf }
-                    Button("CRLF") { model.lineEnding = .crlf }
-                } label: {
-                    Text("\(L10n.lineEnding) \(model.lineEnding.shortLabel)")
-                }
-                .controlSize(.large)
-                .accessibilityIdentifier("send.line-ending")
-                .accessibilityValue(model.lineEnding.shortLabel)
-                Spacer()
-            }
-            .padding(.horizontal, DesignTokens.contentInset)
-            .frame(height: DesignTokens.barHeight)
-            .background(.bar)
+            SendToolbar(model: model)
 
             HStack(alignment: .bottom, spacing: DesignTokens.standardSpacing) {
                 ZStack(alignment: .topLeading) {
@@ -717,54 +716,19 @@ private struct SendEditor: View {
                 }
                 .frame(height: 96)
                 .containerSurface(cornerRadius: DesignTokens.controlCornerRadius)
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("send.surface")
 
                 Button(L10n.send, systemImage: "paperplane.fill") {
                     model.sendCurrentText()
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(SendButtonStyle())
                 .keyboardShortcut(.return, modifiers: .command)
                 .disabled(!model.canSend)
                 .accessibilityIdentifier("send.button")
             }
             .padding(.horizontal, DesignTokens.contentInset)
             .padding(.vertical, DesignTokens.panelVerticalSpacing)
-
-            HStack(spacing: DesignTokens.compactSpacing) {
-                Label("自动发送", systemImage: "repeat")
-                    .appFont(.caption, weight: .semibold)
-                TextField("间隔 ms", value: $model.autoIntervalMilliseconds, format: .number)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 96)
-                    .accessibilityIdentifier("auto-send.interval")
-                TextField("次数（留空无限）", text: $model.autoRepetitionCountText)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 132)
-                    .accessibilityIdentifier("auto-send.count")
-                Button(model.isAutoSending ? "停止循环" : "开始循环") {
-                    model.isAutoSending ? model.stopAutoSend() : model.startEditorAutoSend()
-                }
-                .disabled(model.isAutoSending ? false : !model.canSend)
-                .accessibilityIdentifier("auto-send.toggle")
-                if case .running(_, let remaining) = model.autoSendStatus {
-                    Text(remaining.map { "剩余 \($0) 次" } ?? "持续发送中")
-                        .appFont(.caption)
-                        .foregroundStyle(Color.sessionConnected)
-                        .accessibilityIdentifier("auto-send.status")
-                }
-                Spacer()
-            }
-            .padding(.horizontal, DesignTokens.contentInset)
-            .padding(.bottom, DesignTokens.panelVerticalSpacing)
-
-            if let error = model.sendValidationError {
-                Label(error.localizedDescription, systemImage: "exclamationmark.triangle.fill")
-                    .appFont(.caption)
-                    .foregroundStyle(Color.sessionError)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, DesignTokens.contentInset)
-                    .padding(.bottom, DesignTokens.compactSpacing)
-                    .accessibilityIdentifier("send.validation-error")
-            }
         }
         .background(Color.consoleSurface)
         .accessibilityElement(children: .contain)
@@ -772,9 +736,105 @@ private struct SendEditor: View {
     }
 }
 
+private struct SendButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .padding(.horizontal, 12)
+            .frame(minWidth: 78)
+            .frame(height: 96)
+            .foregroundStyle(.white)
+            .background(Color.accentColor, in: RoundedRectangle(cornerRadius: DesignTokens.controlCornerRadius))
+            .opacity(isEnabled ? (configuration.isPressed ? 0.75 : 1) : 0.5)
+            .contentShape(RoundedRectangle(cornerRadius: DesignTokens.controlCornerRadius))
+    }
+}
+
+private struct SendToolbar: View {
+    @ObservedObject var model: SessionViewModel
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            controls(compact: false)
+            controls(compact: true)
+        }
+        .padding(.horizontal, DesignTokens.contentInset)
+        .frame(height: DesignTokens.barHeight)
+        .background(.bar)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("send.toolbar")
+    }
+
+    private func controls(compact: Bool) -> some View {
+        HStack(spacing: compact ? DesignTokens.compactSpacing / 2 : DesignTokens.compactSpacing) {
+            Text(L10n.send).appFont(.headline)
+            Picker("", selection: $model.sendFormat) {
+                Text("ASCII").tag(DisplayFormat.ascii)
+                Text("HEX").tag(DisplayFormat.hex)
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .frame(width: compact ? 100 : 120)
+            .accessibilityLabel(L10n.sendFormat)
+            .accessibilityIdentifier("send.format")
+            Menu {
+                Button(L10n.none) { model.lineEnding = .none }
+                Button("CR") { model.lineEnding = .cr }
+                Button("LF") { model.lineEnding = .lf }
+                Button("CRLF") { model.lineEnding = .crlf }
+            } label: {
+                Text(compact ? model.lineEnding.shortLabel : "\(L10n.lineEnding) \(model.lineEnding.shortLabel)")
+            }
+            .accessibilityLabel(L10n.lineEnding)
+            .accessibilityIdentifier("send.line-ending")
+            .accessibilityValue(model.lineEnding.shortLabel)
+            Spacer(minLength: 0)
+            if case .running(_, let remaining) = model.autoSendStatus {
+                Text(remaining.map { L10n.autoSendRemaining($0) } ?? L10n.autoSendRunning)
+                    .appFont(.caption)
+                    .foregroundStyle(Color.sessionConnected)
+                    .accessibilityIdentifier("auto-send.status")
+            }
+            HStack(spacing: 4) {
+                TextField(L10n.autoSendInterval, value: $model.autoIntervalMilliseconds, format: .number)
+                    .textFieldStyle(.plain)
+                    .accessibilityLabel(L10n.autoSendInterval)
+                    .accessibilityIdentifier("auto-send.interval")
+                Text(verbatim: "ms")
+                    .foregroundStyle(.secondary)
+                    .allowsHitTesting(false)
+            }
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
+            .frame(width: compact ? 80 : 96)
+            .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: DesignTokens.controlCornerRadius))
+            .overlay {
+                RoundedRectangle(cornerRadius: DesignTokens.controlCornerRadius)
+                    .stroke(Color(nsColor: .separatorColor))
+                    .allowsHitTesting(false)
+            }
+            .help(L10n.autoSendInterval)
+            TextField(L10n.autoSendCountPlaceholder, text: $model.autoRepetitionCountText)
+                .textFieldStyle(.roundedBorder)
+                .frame(width: compact ? 104 : 132)
+                .accessibilityLabel(L10n.autoSendCount)
+                .accessibilityIdentifier("auto-send.count")
+                .help(L10n.autoSendUnlimitedHint)
+            Button(model.isAutoSending ? L10n.autoSendStop : L10n.autoSendStart) {
+                model.isAutoSending ? model.stopAutoSend() : model.startEditorAutoSend()
+            }
+            .disabled(!model.isAutoSending && !model.canSend)
+            .accessibilityIdentifier("auto-send.toggle")
+        }
+        .lineLimit(1)
+    }
+}
+
 private struct PresetInspector: View {
     @ObservedObject var model: SessionViewModel
     @State private var editor: PresetEditorState?
+    @State private var recentlySentPresetID: UUID?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -813,9 +873,12 @@ private struct PresetInspector: View {
                 }
             }
             .containerSurface()
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("presets.surface")
             .padding(.leading, 0)
             .padding(.trailing, DesignTokens.contentInset)
-            .padding(.vertical, DesignTokens.panelVerticalSpacing)
+            .padding(.top, DesignTokens.panelVerticalSpacing)
+            .padding(.bottom, DesignTokens.panelVerticalSpacing)
         }
         .frame(maxHeight: .infinity, alignment: .top)
         .accessibilityElement(children: .contain)
@@ -840,14 +903,16 @@ private struct PresetInspector: View {
                     .appFont(.caption)
                     .foregroundStyle(.secondary)
                 HStack(spacing: 8) {
-                    Button("发送") { model.sendPreset(preset) }
-                        .disabled(!model.isConnected)
                     Button(model.isAutoSending ? "停止" : "循环") {
                         model.isAutoSending ? model.stopAutoSend() : model.startPresetAutoSend(preset)
                     }
                     .disabled(!model.isConnected && !model.isAutoSending)
                     Button("编辑") { editor = PresetEditorState(preset: preset) }
-                    Button("删除", role: .destructive) { model.deletePreset(preset) }
+                        .tint(.blue)
+                    Button(role: .destructive) { model.deletePreset(preset) } label: {
+                        Text("删除")
+                            .foregroundStyle(Color.red)
+                    }
                         .accessibilityIdentifier("presets.delete.\(preset.id.uuidString)")
                 }
                 .buttonStyle(.borderless)
@@ -861,13 +926,28 @@ private struct PresetInspector: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
+        .onTapGesture { sendPreset(preset) }
+        .animation(.easeOut(duration: 0.16), value: recentlySentPresetID)
         .listRowSeparator(.hidden)
         .listRowInsets(EdgeInsets(top: 0, leading: DesignTokens.compactSpacing + 4, bottom: 0, trailing: DesignTokens.compactSpacing + 4))
-        .listRowBackground(Color.clear)
+        .listRowBackground(Color.accentColor.opacity(recentlySentPresetID == preset.id ? 0.12 : 0))
         .contextMenu {
             Button("删除", role: .destructive) { model.deletePreset(preset) }
         }
         .accessibilityElement(children: .contain)
+        .accessibilityAction { sendPreset(preset) }
+    }
+
+    private func sendPreset(_ preset: PresetSnapshot) {
+        guard model.isConnected else { return }
+        model.sendPreset(preset)
+        recentlySentPresetID = preset.id
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(180))
+            if recentlySentPresetID == preset.id {
+                recentlySentPresetID = nil
+            }
+        }
     }
 }
 

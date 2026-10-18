@@ -52,6 +52,8 @@ struct SerialMonitorApp: App {
         Settings {
             SettingsView(model: model)
         }
+        .windowStyle(.hiddenTitleBar)
+        .defaultSize(width: 760, height: 560)
     }
 }
 

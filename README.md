@@ -22,7 +22,7 @@
 
 ## 下载安装（Release）
 
-在仓库 **Releases** 页面下载 `SerialMonitor-<版本>.dmg`（或 `.zip`），拖入“应用程序”即可，支持 Apple Silicon 与 Intel，最低 macOS 14。
+在仓库 **Releases** 页面下载 `SerialMonitor-<版本>.dmg`，双击打开后，将 `SerialMonitor.app` 拖到同一窗口中的“应用程序”（Applications）文件夹入口即可安装；也可下载 `.zip`，解压后将应用拖入“应用程序”。支持 Apple Silicon 与 Intel，最低 macOS 14。
 
 发布包由 `.github/workflows/release.yml` 在推送 `v*` 标签时自动构建并上传。当前为 **ad-hoc 签名、未公证**，首次打开需放行 Gatekeeper：
 

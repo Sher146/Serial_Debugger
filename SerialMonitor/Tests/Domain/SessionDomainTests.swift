@@ -98,7 +98,7 @@ final class SessionDomainTests: XCTestCase {
         XCTAssertFalse(machine.transition(to: .disconnected))
     }
 
-    func testRecordStoreTruncatesButPreservesCountersWhenCleared() async {
+    func testRecordStoreClearsRecordsAndCounters() async {
         let store = RecordStore(maximumRecords: 2, maximumBytes: 3)
         await store.append(CommunicationRecord(direction: .received, rawBytes: Data([1, 2]), displayFormat: .hex))
         await store.append(CommunicationRecord(direction: .transmitted, rawBytes: Data([3, 4]), displayFormat: .hex))
@@ -114,8 +114,8 @@ final class SessionDomainTests: XCTestCase {
         let cleared = await store.statistics()
         XCTAssertEqual(cleared.recordCount, 0)
         XCTAssertEqual(cleared.storedByteCount, 0)
-        XCTAssertEqual(cleared.receivedByteCount, 2)
-        XCTAssertEqual(cleared.transmittedByteCount, 2)
+        XCTAssertEqual(cleared.receivedByteCount, 0)
+        XCTAssertEqual(cleared.transmittedByteCount, 0)
     }
 
     func testSafeFileNameRemovesPathSeparators() {
