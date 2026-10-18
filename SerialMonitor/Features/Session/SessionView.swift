@@ -93,6 +93,8 @@ private struct SessionToolbarContent: ToolbarContent {
                     .truncationMode(.middle)
                     .frame(width: DesignTokens.toolbarPortPickerWidth - 40, alignment: .leading)
             }
+            .labelStyle(.titleOnly)
+            .frame(width: DesignTokens.toolbarPortPickerWidth)
             .fixedSize()
             .controlSize(.large)
             .disabled(model.isConfigurationLocked)
@@ -116,6 +118,8 @@ private struct SessionToolbarContent: ToolbarContent {
                 Text(BaudRateCatalog.label(for: model.configuration.baudRate))
                     .frame(width: 80, alignment: .leading)
             }
+            .labelStyle(.titleOnly)
+            .frame(width: 120)
             .fixedSize()
             .controlSize(.large)
             .disabled(model.isConfigurationLocked)

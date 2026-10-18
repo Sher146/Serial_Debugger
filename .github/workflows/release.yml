@@ -9,6 +9,10 @@ on:
         description: "版本号（仅手动触发时需要，例如 1.0.0）"
         required: false
         default: "0.0"
+      publish:
+        description: "发布到 GitHub Release（关闭时仅生成候选安装包）"
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -31,12 +35,14 @@ jobs:
 
       - name: Determine version
         id: version
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
         run: |
           set -euo pipefail
           if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
             v="${GITHUB_REF_NAME#v}"
           else
-            v="${{ github.event.inputs.version }}"
+            v="$REQUESTED_VERSION"
           fi
           [[ -z "$v" ]] && v="0.0"
           echo "version=$v" >> "$GITHUB_OUTPUT"
@@ -48,7 +54,18 @@ jobs:
           DIST_OUTPUT: ${{ github.workspace }}/build/dist
         run: bash Scripts/build_distribution.sh
 
+      - name: Upload candidate packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: SerialMonitor-${{ steps.version.outputs.version }}-packages
+          path: |
+            build/dist/*.zip
+            build/dist/*.dmg
+          retention-days: 7
+          if-no-files-found: error
+
       - name: Extract release notes from CHANGELOG
+        if: github.event_name != 'workflow_dispatch' || inputs.publish
         run: |
           set -euo pipefail
           version="${{ steps.version.outputs.version }}"
@@ -63,6 +80,7 @@ jobs:
           cat release-notes.md
 
       - name: Publish GitHub Release
+        if: github.event_name != 'workflow_dispatch' || inputs.publish
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', steps.version.outputs.version) }}
