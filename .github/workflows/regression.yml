@@ -19,7 +19,7 @@ jobs:
       matrix:
         os: [macos-14, macos-15]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Select newest Xcode
         run: |
           set -euo pipefail
@@ -36,7 +36,7 @@ jobs:
     name: App regression (macOS 15 / Xcode 26)
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # The app must compile with a macOS 26+ SDK because of the Liquid Glass
       # API. GitHub's macos-14 image cannot host that SDK, so the App job runs
@@ -65,7 +65,7 @@ jobs:
 
       - name: Upload artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: TestArtifacts
           path: TestArtifacts/

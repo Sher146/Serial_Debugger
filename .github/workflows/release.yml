@@ -21,7 +21,7 @@ jobs:
   package:
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Select newest Xcode
         run: |
@@ -55,7 +55,7 @@ jobs:
         run: bash Scripts/build_distribution.sh
 
       - name: Upload candidate packages
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: SerialMonitor-${{ steps.version.outputs.version }}-packages
           path: |
@@ -81,7 +81,7 @@ jobs:
 
       - name: Publish GitHub Release
         if: github.event_name != 'workflow_dispatch' || inputs.publish
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', steps.version.outputs.version) }}
           name: Serial Monitor ${{ steps.version.outputs.version }}
