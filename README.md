@@ -1,24 +1,51 @@
-![Serial Monitor Logo](SerialMonitor/icon.png)
+<img src="SerialMonitor/icon.png" alt="Serial Monitor 应用图标" width="128" height="128">
 
 # Serial Monitor
 
-面向 macOS 的单窗口串口监视与调试工具。当前开发版本支持发现串口、配置通信参数、连接/断开、接收原始字节、以 ASCII 或 HEX 查看记录，以及手动发送数据。
+面向 macOS 的单窗口串口监视与调试工具，界面为简体中文。连接串口后即可实时查看收发数据：用 ASCII 或 HEX 阅读、按时间戳定位问题、以手动/循环发送和预设完成日常调试，并把整段会话写入 NDJSON 日志。
 
-> 工程部署目标为 **macOS 14.0**，以 macOS 26+ 的 Liquid Glass 为优先体验、低版本回退到系统 Material。当前已在 macOS 27 本机与 macOS 15 CI 验证；**macOS 14 的 App 运行时尚未实机验证**，涉及编译需 macOS 26+ SDK（见下）。
+原生 SwiftUI 实现，无第三方依赖；发布包为 Apple Silicon 与 Intel 通用二进制，最低运行 macOS 14。
 
-## 当前状态
+![Serial Monitor 主工作区](Docs/Images/main-window.png)
 
-已完成的开发能力：
+*上图：已连接的会话——顶部为端口/波特率/参数与连接控制，左侧为收发记录，右侧为预设检查器，底部状态栏显示 RX/TX 字节数与日志状态。*
 
-- 串口端口发现与完整通信参数配置（波特率、数据位、校验、停止位、流控制）
-- 单一活跃会话的连接、取消连接、断开、接收与 FIFO 手动发送
-- ASCII / HEX 记录显示、时间戳、自动跟随、暂停显示和清空记录
-- 编辑器重复发送与预设循环发送（单一全局任务、有限次数或无限循环）
-- 本机持久化的预设 CRUD、单次发送与循环发送
-- 手动启停的 NDJSON 日志、设置窗口、菜单命令与快捷键
-- 中文 SwiftUI 主工作区，以及 macOS 原生工具栏和检查器布局
+> 本文中的截图均取自应用真实界面（通过内置的确定性场景替身展示一次连接与回环收发）。当前版本 **1.0.4**，变更见 [更新日志](CHANGELOG.md)。
+>
+> 工程部署目标为 **macOS 14.0**，以 macOS 26+ 的 Liquid Glass 为优先体验、低版本回退到系统 Material。当前已在 macOS 27 本机与 macOS 15 CI 验证；**macOS 14 的 App 运行时尚未实机验证**，编译需要 macOS 26+ SDK（见下文）。
 
-发布脚本（归档/导出/公证/验证）已就绪，但 Developer ID 签名与公证受凭据限制、真实设备兼容性验证受硬件限制，均尚未执行；详见 [发布检查清单](Docs/ReleaseChecklist.md)。
+## 功能特性
+
+### 连接与参数
+
+- 自动发现本机串口（`/dev/cu.*`）；设备接入或移除后自动刷新，也可手动“刷新”
+- 完整通信参数：波特率（预设 + 自定义）、数据位、校验、停止位、流控制
+- 单一活跃会话：连接、取消、断开与重连；未连接时发送区自动禁用并给出提示
+
+### 接收与查看
+
+- 以**原始字节为唯一事实来源**，ASCII 与 HEX 都是它的投影
+- ASCII 视图按设备换行逐行显示，可选 UTF-8 / GB18030 编码
+- HEX 视图支持空格 / 逗号 / 无分隔符，以及大写切换
+- 时间戳、自动跟随最新数据、暂停显示、一键清空
+- 原生文本控制台：支持跨行选择与复制，长会话在达到缓存上限时自动裁剪
+
+### 发送
+
+- ASCII / HEX 输入；HEX 边输入边两两分组，也支持直接粘贴
+- 行结束符：无、`CR`、`LF`、`CRLF`
+- 手动发送（`⌘↩`）与间隔重复发送（有限次数或无限循环；断连或发送失败会自动停止）
+- 本机持久化的预设：新增、编辑、删除，点击整行或按钮即可单次 / 循环发送
+
+### 日志与设置
+
+- NDJSON 日志手动启停；可配置目录、文件名前缀、单文件轮转与“连接后自动记录”
+- 设置窗口（`⌘,`）：外观模式、5 档全局字体大小、默认数据格式、内存缓存上限、日志策略与会话恢复
+- 菜单命令与快捷键覆盖刷新、连接、发送、暂停、清空与日志
+
+![HEX 显示、时间戳与日志记录中](Docs/Images/hex-logging.png)
+
+*上图：同一段会话切换为 HEX 视图，并已开始记录日志（状态栏右下角显示“记录中”）。*
 
 ## 下载安装（Release）
 
@@ -29,37 +56,29 @@
 - 访达中右键 App → **打开** → 仍要打开；或
 - 终端执行 `xattr -dr com.apple.quarantine /Applications/SerialMonitor.app`
 
-要做到下载后无提示直接运行，需要 Developer ID 签名与公证凭据（见下方“发布”）。
+要做到下载后无提示直接运行，需要 Developer ID 签名与公证凭据（见下文“发布”）。
 
-## 环境要求
+## 快速上手
 
-- 运行最低版本 macOS 14.0；当前已在 macOS 27 本机与 macOS 15 CI 验证，**macOS 14 运行时未验证**
-- 编译需要包含 macOS 26 SDK 的完整 Xcode 26+（Liquid Glass API 需在编译期存在；仅安装 Command Line Tools 不足以运行和测试此 App）
-- 已选择完整 Xcode 工具链，例如：`xcode-select -p` 应指向 `/Applications/Xcode.app/Contents/Developer`
-- 当前已在 Apple Silicon 开发机上验证
-
-项目使用仓库内的本地 Swift Package `Packages/SerialCore`；打开工程或执行构建时，Xcode 会自动解析它，不需要安装 Homebrew 或第三方串口库。
-
-## 用 Xcode 运行
+### 用 Xcode 运行
 
 1. 在终端运行 `open SerialMonitor.xcodeproj`，或在 Finder 中打开工程。
-2. 在 Xcode 顶部选择 `SerialMonitor` scheme 和 **My Mac** 运行目标。
-3. 点击运行按钮（或按 `⌘R`）即可进行本地试用。只有要验证已签名沙盒 App 对真实串口的访问时，才需要在 **Signing & Capabilities** 配置开发签名身份。
-4. 启动后点击“刷新”，选择目标串口和波特率；如有需要，通过“参数”设置数据位、校验、停止位和流控制。
-5. 点击“连接”。连接成功后，在下方发送区选择 ASCII 或 HEX、行结束符并输入数据，再点击“发送”（或按 `⌘↩`）。
+2. 在 Xcode 顶部选择 `SerialMonitor` scheme 和 **My Mac** 运行目标，按 `⌘R` 运行。
+3. 启动后点击“刷新”，选择目标串口和波特率；如有需要，通过工具栏的“参数”按钮设置数据位、校验、停止位和流控制。
+4. 点击“连接”。连接成功后，在下方发送区选择 ASCII 或 HEX、行结束符并输入数据，再点击“发送”（或按 `⌘↩`）。
 
-未连接时，发送按钮会保持禁用。HEX 模式只接受合法的十六进制字节；校验错误会显示在输入框下方且不会清除已输入内容。
+只有要验证已签名沙盒 App 对真实串口的访问时，才需要在 **Signing & Capabilities** 配置开发签名身份。未连接时发送按钮保持禁用；HEX 模式只接受合法的十六进制字节，校验错误会显示在输入框下方且不会清除已输入内容。
 
-### P3 功能试用位置
+在本机试用时还可以：
 
-- 在发送区设置内容、格式和行结束符后，使用“重复发送”启动/停止循环；可选 10 ms 以上的间隔，以及有限次数或无限循环。断连或发送失败会自动停止。
-- 通过工具栏的检查器按钮打开右侧“预设”，可新增、编辑、删除、单次发送或循环发送预设；预设会保存在本机。
-- 使用工具栏的“开始记录”选择目录后开始写入 NDJSON 日志，再次点击可停止；日志文件名由“设置”（`⌘,`）中的目录和前缀决定。
-- “设置”（`⌘,`）还可调整默认通信参数、显示格式、时间戳、自动跟随与预设面板状态。菜单中提供刷新、连接、发送、暂停、清空和日志的等价命令及快捷键。
+- 在发送区设置内容、格式和行结束符后，用“开始循环”启动 / 停止重复发送（10 ms 以上间隔，有限次数或无限循环）。
+- 通过工具栏的“预设”打开右侧检查器，新增、编辑、删除、单次发送或循环发送预设；预设保存在本机。
+- 用工具栏的“开始记录”选择目录后开始写入 NDJSON 日志，再次点击可停止；日志文件名由设置中的目录和前缀决定。
+- 在“设置”（`⌘,`）中调整默认通信参数、显示格式、时间戳、自动跟随与预设面板状态。
 
 本地试用不包含真实 USB-UART、蓝牙对端或物理热拔出验证；常规启动使用系统 POSIX 串口实现，测试时才会启用内置的确定性场景替身。
 
-## 命令行运行
+### 命令行构建并打开
 
 无需开发签名即可构建并打开本地 Debug App：
 
@@ -79,17 +98,40 @@ xcodebuild \
 open "$derived_data/Build/Products/Debug/SerialMonitor.app"
 ```
 
-退出 App 后可再次执行上述命令；构建产物位于临时目录，不会写入仓库。若系统阻止打开，请改用上面的 Xcode 运行方式。
+退出 App 后可再次执行；构建产物位于临时目录，不会写入仓库。若系统阻止打开，请改用上面的 Xcode 运行方式。
 
-## 命令行构建与测试
+## 界面说明
 
-先运行开发环境检查：
+### 预设编辑器
+
+预设与发送区和控制台保持一致：ASCII / HEX 格式、行结束符与多行内容都能直接编辑，保存后立即出现在右侧检查器中。
+
+![新建预设](Docs/Images/preset-editor.png)
+
+### 设置
+
+设置窗口采用固定侧栏，分为常规、显示与可读性、数据格式、数据保留、日志、会话与预设六组；“保存”只应用当前草稿，取消不会改动已有配置。
+
+![设置窗口](Docs/Images/settings.png)
+
+## 环境要求
+
+- 运行最低版本 macOS 14.0；当前已在 macOS 27 本机与 macOS 15 CI 验证，**macOS 14 运行时未验证**
+- 编译需要包含 macOS 26 SDK 的完整 Xcode 26+（Liquid Glass API 需在编译期存在；仅安装 Command Line Tools 不足以运行和测试此 App）
+- 已选择完整 Xcode 工具链，例如 `xcode-select -p` 应指向 `/Applications/Xcode.app/Contents/Developer`
+- 当前已在 Apple Silicon 开发机上验证
+
+项目使用仓库内的本地 Swift Package `Packages/SerialCore`；打开工程或执行构建时 Xcode 会自动解析它，不需要安装 Homebrew 或第三方串口库。
+
+开发环境自检：
 
 ```zsh
 zsh Scripts/verify-development-environment.sh
 ```
 
-以下命令可进行无签名 Debug 构建，适用于本地工程、Swift 6 并发和依赖解析检查：
+## 开发与测试
+
+无签名 Debug 构建（适用于本地工程、Swift 6 并发和依赖解析检查）：
 
 ```zsh
 xcodebuild \
@@ -111,7 +153,7 @@ zsh Scripts/run-automated-tests.zsh --ui-only  # 仅 UI
 zsh Scripts/run-automated-tests.zsh --stress   # 追加 30 分钟 Py PTY 压测
 ```
 
-脚本不访问真实串口；PTY、`Scripts/pty_stress.py` 与内置 UI 场景替身是日常自动化的串口替身。压测默认跳过，需 `--stress` 显式启用；`--xctest-stress` 可运行进程内 `PTYStressTests`。覆盖率仅记录，不设百分比门禁。矩阵见 [自动化测试矩阵](Docs/AutomatedTestMatrix.md)，界面检查见 [UI 测试与界面检查清单](Docs/UITestChecklist.md)。
+该脚本是唯一的回归入口，只使用 mock、PTY 与内置 UI 场景替身，**不访问真实串口**。压测默认跳过，需 `--stress` 显式启用；`--xctest-stress` 可运行进程内 `PTYStressTests`。覆盖率仅记录，不设百分比门禁。矩阵见 [自动化测试矩阵](Docs/AutomatedTestMatrix.md)，界面检查见 [UI 测试与界面检查清单](Docs/UITestChecklist.md)。
 
 也可在已配置开发签名的环境中直接运行 Xcode 测试：
 
@@ -124,7 +166,25 @@ xcodebuild \
   test
 ```
 
-该 scheme 同时包含 Unit Tests 和 UI Tests。直接运行的 UI 测试需要可启动测试 Runner 的有效开发签名；无开发签名时优先使用上述脚本，它会为 UI Runner 使用 ad-hoc 签名。
+该 scheme 同时包含 Unit Tests 和 UI Tests。直接运行的 UI 测试需要可启动测试 Runner 的有效开发签名；无开发签名时优先使用上述脚本，它会为 UI Runner 使用 ad-hoc 签名。新增 `SerialMonitor/Tests/**` 文件必须手动加入 `SerialMonitor.xcodeproj/project.pbxproj`。
+
+## 项目结构
+
+```
+SerialMonitor/
+  App/            应用入口、Commands、UI 测试场景注入
+  Features/       SwiftUI 视图与 @MainActor ViewModel（Session、Settings）
+  Application/    SessionCoordinator、SessionClient/Event、TXSendQueue、LogServicing
+  Domain/         模型、校验、状态机、编码器、RecordStore、Preferences/PresetStore
+  Infrastructure/ POSIX/termios 串口适配器、文件日志
+  Shared/         DesignTokens、Localization、VisualEffectsSupport、WindowConfigurationBridge
+  Tests/          Unit / PTY / UI 测试
+Packages/SerialCore/  SerialPorting 协议与值类型（唯一串口抽象）
+```
+
+- `SerialPorting` 是唯一串口抽象，实现只能位于 Infrastructure，不得改变 `SerialCore` 的公开签名。
+- `SessionCoordinator` 是唯一持有串口、TX 队列、调度与日志的 actor，并实现 UI 用的 `SessionClient`。
+- `CommunicationRecord.rawBytes: Data` 是收发事实来源；ASCII/HEX/日志均为投影。
 
 ## 持续集成
 
@@ -161,8 +221,6 @@ bash Scripts/hardware-smoke.sh --port /dev/cu.<device> --wait-unplug 20
 
 它会验证打开/配置、回环收发与占用错误，结果回填 [真实设备测试矩阵](Docs/RealDeviceTestMatrix.md)。
 
-详细的环境配置、验证命令与限制见 [开发环境说明](Docs/DevelopmentEnvironment.md)，设备验证进度见 [串口兼容性矩阵](Docs/SerialCompatibilityMatrix.md) 与 [真实设备测试矩阵](Docs/RealDeviceTestMatrix.md)，依赖决策见 [依赖登记](Docs/Dependencies.md)，性能见 [性能报告](Docs/PerformanceReport.md)，发布见 [发布检查清单](Docs/ReleaseChecklist.md) 与 [依赖与许可证](Docs/Licenses.md)。
-
 ## 发布（受限）
 
 发布脚本已就绪，但缺少 Developer ID 与公证凭据、真实设备，尚不可执行签名/公证：
@@ -172,6 +230,18 @@ bash Scripts/build_release.sh --smoke                    # 无签名 Release 构
 DEVELOPMENT_TEAM=<team> bash Scripts/build_release.sh    # 归档并导出
 NOTARY_PROFILE=<profile> bash Scripts/notarize.sh <app>  # 提交/等待/staple
 bash Scripts/verify_release.sh <app>                     # 验签、entitlement、Gatekeeper、公证与包内无用户数据
+DIST_OUTPUT=build/dist bash Scripts/build_distribution.sh  # 通用二进制 .zip/.dmg（默认 ad-hoc）
 ```
 
-凭据只通过本机钥匙串/环境变量提供，不写入仓库。
+凭据只通过本机钥匙串/环境变量提供，不写入仓库。GitHub Release 由推送 `v*` 标签触发，调用 `build_distribution.sh` 并上传 `.dmg`/`.zip`。
+
+## 文档索引
+
+- 界面设计规范：[Serial_Monitor_UI设计规范_V1.0.html](Serial_Monitor_UI设计规范_V1.0.html)（基于 Apple Human Interface Guidelines；圆角控件 6/容器 10、8pt 栅格与 20pt 内容边距、字号取 HIG macOS text styles）
+- 环境与限制：[Docs/DevelopmentEnvironment.md](Docs/DevelopmentEnvironment.md)
+- 测试矩阵：[Docs/AutomatedTestMatrix.md](Docs/AutomatedTestMatrix.md)、[Docs/UITestChecklist.md](Docs/UITestChecklist.md)
+- 发布：[Docs/ReleaseChecklist.md](Docs/ReleaseChecklist.md)、[Docs/Licenses.md](Docs/Licenses.md)
+- 设备：[Docs/SerialCompatibilityMatrix.md](Docs/SerialCompatibilityMatrix.md)、[Docs/RealDeviceTestMatrix.md](Docs/RealDeviceTestMatrix.md)
+- 性能：[Docs/PerformanceReport.md](Docs/PerformanceReport.md)
+- 依赖：[Docs/Dependencies.md](Docs/Dependencies.md)
+- 阶段计划：`开发计划/*.md`
