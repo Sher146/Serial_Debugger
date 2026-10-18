@@ -5,6 +5,7 @@
 [![Regression](https://github.com/Sher146/Serial_Debugger/actions/workflows/regression.yml/badge.svg?branch=main)](https://github.com/Sher146/Serial_Debugger/actions/workflows/regression.yml)
 [![Release](https://img.shields.io/github/v/release/Sher146/Serial_Debugger?label=release&color=blue)](https://github.com/Sher146/Serial_Debugger/releases/latest)
 [![Platform](https://img.shields.io/badge/platform-macOS%2014%2B-lightgrey)](#环境要求)
+[![License](https://img.shields.io/github/license/Sher146/Serial_Debugger?label=license&color=green)](LICENSE)
 
 面向 macOS 的单窗口串口监视与调试工具，界面为简体中文。连接串口后即可实时查看收发数据：用 ASCII 或 HEX 阅读、按时间戳定位问题、以手动/循环发送和预设完成日常调试，并把整段会话写入 NDJSON 日志。
 
@@ -238,6 +239,26 @@ DIST_OUTPUT=build/dist bash Scripts/build_distribution.sh  # 通用二进制 .zi
 ```
 
 凭据只通过本机钥匙串/环境变量提供，不写入仓库。GitHub Release 由推送 `v*` 标签触发，调用 `build_distribution.sh` 并上传 `.dmg`/`.zip`。
+
+## 许可证
+
+本项目采用 **GNU General Public License v3.0**（GPL-3.0）发布。
+
+```
+Copyright (C) 2026 Sher146
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+```
+
+完整条款见 [LICENSE](LICENSE)。发布包对应的源代码即本仓库（含 `Scripts/` 下的构建与打包脚本），可自行从源码构建。由于 GPL-3.0 与 Mac App Store 的分发条款不兼容，本项目只通过 GitHub Releases 以 `.dmg` / `.zip` 直接分发。
 
 ## 文档索引
 

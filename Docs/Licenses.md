@@ -8,6 +8,12 @@
 
 本项目不引入任何第三方串口库，`Packages/SerialCore` 仅依赖 Foundation/Darwin。
 
+## 本项目许可证
+
+**GNU General Public License v3.0**（GPL-3.0），版权归 `Copyright (C) 2026 Sher146` 所有，完整条款见仓库根目录 [LICENSE](../LICENSE)。
+
+GPL-3.0 与 Mac App Store 的分发条款不兼容，因此本项目只通过 GitHub Releases 以 `.dmg` / `.zip` 直接分发，不发布到 App Store。
+
 ## 升级策略
 
 若未来引入候选库，必须先在本表登记：名称、精确版本/revision、许可证文本链接、哈希，
