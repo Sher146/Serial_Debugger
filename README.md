@@ -1,4 +1,4 @@
-![Serial Monitor Logo](SerialMonitor/image.svg)
+![Serial Monitor Logo](SerialMonitor/icon.png)
 
 # Serial Monitor
 
