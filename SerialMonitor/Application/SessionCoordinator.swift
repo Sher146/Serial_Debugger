@@ -10,8 +10,13 @@ actor SessionCoordinator: SessionClient {
     private let clock = ContinuousClock()
     private let writeTimeout: Duration
     private let portPollInterval: Duration
+    /// 为 `nil` 时不做跨会话登记（单元测试各自持有独立串口）；App 传入共享租约簿，
+    /// 保证两个窗口不会同时占用同一个设备。
+    private let portLeases: SerialPortLeaseBook?
+    private let leaseOwner = UUID()
 
     private var stateMachine = SessionStateMachine()
+    private var leasedPath: String?
     private var ports: [SerialPortDescriptor] = []
     private var latestError: SessionError?
     private var connectionAttemptID = UUID()
@@ -33,13 +38,15 @@ actor SessionCoordinator: SessionClient {
         recordStore: RecordStore = RecordStore(),
         logService: any LogServicing = NullLogService(),
         writeTimeout: Duration = .seconds(2),
-        portPollInterval: Duration = .milliseconds(1_200)
+        portPollInterval: Duration = .milliseconds(1_200),
+        portLeases: SerialPortLeaseBook? = nil
     ) {
         self.serialPort = serialPort
         self.recordStore = recordStore
         self.logService = logService
         self.writeTimeout = writeTimeout
         self.portPollInterval = portPollInterval
+        self.portLeases = portLeases
     }
 
     func subscribe() async -> AsyncStream<SessionEvent> {
@@ -81,6 +88,21 @@ actor SessionCoordinator: SessionClient {
 
     func connect(configuration: SerialConfiguration) async {
         await disconnectCurrentSession(publishDisconnected: false)
+
+        if let portLeases {
+            guard await portLeases.acquire(configuration.path, owner: leaseOwner) else {
+                latestError = .serial(SerialError(
+                    category: .openFailed,
+                    operation: "open",
+                    path: configuration.path,
+                    message: "该端口已在另一个窗口中打开，请先断开那个窗口"
+                ))
+                await eventHub.publish(.latestErrorChanged(latestError))
+                return
+            }
+            leasedPath = configuration.path
+        }
+
         let attempt = UUID()
         connectionAttemptID = attempt
         latestError = nil
@@ -356,6 +378,7 @@ actor SessionCoordinator: SessionClient {
         await logService.stop()
         await logService.flushAndClose()
         await serialPort.close()
+        await releasePortLease()
         latestError = error
         await transition(to: .error(error))
         await eventHub.publish(.latestErrorChanged(error))
@@ -388,7 +411,14 @@ actor SessionCoordinator: SessionClient {
         } else if publishDisconnected {
             await eventHub.publish(.stateChanged(.disconnected))
         }
+        await releasePortLease()
         await eventHub.publish(.logStatusChanged(await logService.currentStatus()))
+    }
+
+    private func releasePortLease() async {
+        guard let portLeases, let leasedPath else { return }
+        self.leasedPath = nil
+        await portLeases.release(leasedPath, owner: leaseOwner)
     }
 
     private func runAutoSend(_ schedule: AutoSendSchedule, identifier: UUID) async {

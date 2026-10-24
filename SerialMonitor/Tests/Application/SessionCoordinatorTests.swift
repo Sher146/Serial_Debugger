@@ -275,6 +275,27 @@ final class SessionCoordinatorTests: XCTestCase {
         await coordinator.shutdown()
     }
 
+    func testSecondSessionCannotLeaseAnAlreadyOpenPort() async throws {
+        let leases = SerialPortLeaseBook()
+        let configuration = SerialConfiguration(path: "/dev/cu.leased")
+        let first = SessionCoordinator(serialPort: MockSerialPort(), portLeases: leases)
+        let second = SessionCoordinator(serialPort: MockSerialPort(), portLeases: leases)
+
+        await first.connect(configuration: configuration)
+        let firstState = await first.currentState()
+        XCTAssertEqual(firstState, .connected(configuration))
+
+        await second.connect(configuration: configuration)
+        let secondState = await second.currentState()
+        XCTAssertEqual(secondState, .disconnected)
+
+        await first.disconnect()
+        await second.connect(configuration: configuration)
+        let retriedState = await second.currentState()
+        XCTAssertEqual(retriedState, .connected(configuration))
+        await second.disconnect()
+    }
+
     private func waitUntil(
         timeout: Duration = .seconds(1),
         condition: @escaping @Sendable () async -> Bool

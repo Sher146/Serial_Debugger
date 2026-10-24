@@ -32,6 +32,10 @@
 - macOS App 不需要 iOS 模拟器；`simctl` 仅作为完整 Xcode 安装完整性的检查项。
 - CH340、CP210x、回环线及实机拔出测试暂不执行。设备到位后按 [SerialCompatibilityMatrix.md](SerialCompatibilityMatrix.md) 填写矩阵。
 - Developer ID、App Store Connect 凭据和公证凭据仅在 P4 配置；不得保存在仓库、脚本或 CI 日志。
+- 2026-10-24 本机（macOS 27 + Xcode 27）：`zsh Scripts/run-automated-tests.zsh --ui-only` 的 ad-hoc 签名构建
+  启动后没有窗口，22 个 UI 用例全部报 “workspace missing”；同一份代码（含改动前的 `db452fa`）在
+  `CODE_SIGNING_ALLOWED=NO` 下全部通过。签名/沙箱的 UI 启动问题尚未定位，UI 用例暂以无签名构建验证；
+  跑 UI 前还需确认没有同 bundle id 的旧实例在运行，否则同样会拿不到窗口。
 
 ## 日常命令
 

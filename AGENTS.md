@@ -4,7 +4,7 @@
 
 ## 项目概览
 
-- 面向 macOS 的单窗口串口监视/调试工具，界面为简体中文（zh-CN）。
+- 面向 macOS 的多窗口串口监视/调试工具（每个窗口一个独立会话），界面为简体中文（zh-CN）。
 - Swift 6 严格并发（`SWIFT_STRICT_CONCURRENCY = complete`），SwiftUI + 少量 AppKit bridge。
 - 部署目标 **macOS 14.0**；但**编译必须使用包含 macOS 26 SDK 的 Xcode 26+**，因为 Liquid Glass 的
   `.glassEffect()` 需在编译期存在（运行期由 `@available(macOS 26.0, *)` 弱链接，低版本回退 Material）。
@@ -14,9 +14,9 @@
 
 ```
 SerialMonitor/
-  App/            应用入口、Commands、UI 测试场景注入
+  App/            应用入口、每窗口会话装配（SessionWindow）、Commands、UI 测试场景注入
   Features/       SwiftUI 视图与 @MainActor ViewModel（Session、Settings）
-  Application/    SessionCoordinator、SessionClient/Event、TXSendQueue、LogServicing
+  Application/    SessionCoordinator、SessionClient/Event、TXSendQueue、LogServicing、SerialPortLeaseBook
   Domain/         模型、校验、状态机、编码器、RecordStore、Preferences/PresetStore
   Infrastructure/ POSIX/termios 串口适配器、文件日志
   Shared/         DesignTokens、Localization、VisualEffectsSupport、WindowConfigurationBridge
@@ -27,6 +27,10 @@ Packages/SerialCore/  SerialPorting 协议与值类型（唯一串口抽象）
 规则：
 
 - `SerialPorting` 是唯一串口抽象，实现只能位于 Infrastructure；不得改变 `SerialCore` 的公开签名。
+- 每个窗口拥有独立的 `SessionViewModel` 与 `SessionCoordinator`；App 层只共享
+  Preferences/Preset 存储，不得再引入全局单会话模型。命令通过 `.focusedSceneObject` 作用于聚焦窗口。
+- 同一串口路径同一时刻只能被一个会话占用：窗口新建的 coordinator 必须注入
+  `SerialPortLeaseBook.shared`，跨窗口冲突要拒绝连接并提示，而不是依赖驱动报错。
 - `SessionCoordinator` 是唯一持有串口、TX 队列、调度与日志的 actor，并实现 UI 用的 `SessionClient`。
 - `SessionClient.subscribe()` 为每个订阅者返回独立 `AsyncStream<SessionEvent>`。
 - `CommunicationRecord.rawBytes: Data` 是收发事实来源；ASCII/HEX/日志均为投影。

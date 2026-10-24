@@ -259,6 +259,30 @@ final class SessionViewModelTests: XCTestCase {
         )
     }
 
+    func testWindowRegistryKeepsLastActiveWindowAndFallsBackOnClose() {
+        let registry = SessionWindowRegistry()
+        let first = SessionViewModel(
+            client: SessionClientStub(),
+            preferencesStore: PreferencesStore(defaults: InMemoryKeyValueStore(), key: "first")
+        )
+        let second = SessionViewModel(
+            client: SessionClientStub(),
+            preferencesStore: PreferencesStore(defaults: InMemoryKeyValueStore(), key: "second")
+        )
+
+        registry.register(first)
+        XCTAssertTrue(registry.activeModel === first)
+
+        registry.activate(second)
+        XCTAssertTrue(registry.activeModel === second)
+
+        registry.unregister(second)
+        XCTAssertTrue(registry.activeModel === first)
+
+        registry.unregister(first)
+        XCTAssertNil(registry.activeModel)
+    }
+
     private func eventually(_ condition: () async -> Bool) async {
         for _ in 0..<200 {
             if await condition() { return }

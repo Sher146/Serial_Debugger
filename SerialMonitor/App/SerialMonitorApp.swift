@@ -3,99 +3,75 @@ import SerialCore
 
 @main
 struct SerialMonitorApp: App {
-    @StateObject private var model: SessionViewModel
+    private let environment: SessionEnvironment
+    @StateObject private var windows = SessionWindowRegistry()
 
     init() {
-        let client: any SessionClient
-        let preferencesStore: PreferencesStore
-        let presetStore: PresetStore
-        if let scenario = SessionUITestScenario(arguments: ProcessInfo.processInfo.arguments) {
-            client = SessionScenarioClient(scenario: scenario)
-            // UI tests must not inherit user presets or panel visibility from a
-            // previous manual launch. A single fixed suite, cleared on launch,
-            // avoids accumulating one plist per run in ~/Library/Preferences.
-            let suiteName = "serial-monitor.ui-test"
-            let defaults = UserDefaults(suiteName: suiteName)!
-            defaults.removePersistentDomain(forName: suiteName)
-            preferencesStore = PreferencesStore(defaults: defaults, key: "preferences")
-            presetStore = PresetStore(defaults: defaults, key: "presets")
-            // A deterministic log directory lets the logging toggle run without
-            // presenting a blocking NSOpenPanel during automation.
-            var testPreferences = preferencesStore.load()
-            testPreferences.logDirectoryPath = FileManager.default.temporaryDirectory
-                .appendingPathComponent("serial-monitor-ui-test-logs", isDirectory: true)
-                .path
-            let arguments = ProcessInfo.processInfo.arguments
-            if let index = arguments.firstIndex(of: "-ui-testing-font-scale"),
-               arguments.indices.contains(index + 1),
-               let scale = AppFontScale(rawValue: arguments[index + 1]) {
-                testPreferences.fontScale = scale
-            }
-            preferencesStore.save(testPreferences)
-        } else {
-            client = SessionCoordinator(serialPort: POSIXSerialPortAdapter(), logService: FileLogService())
-            preferencesStore = PreferencesStore()
-            presetStore = PresetStore()
-        }
-        _model = StateObject(wrappedValue: SessionViewModel(client: client, preferencesStore: preferencesStore, presetStore: presetStore))
+        environment = SessionEnvironment.bootstrap(arguments: ProcessInfo.processInfo.arguments)
     }
 
     var body: some Scene {
         WindowGroup(L10n.appName) {
-            SessionView(model: model)
-                .preferredColorScheme(model.appearance.colorScheme)
-                .environment(\.appFontScale, model.fontScale)
+            SessionWindowView(environment: environment, registry: windows)
         }
         .defaultSize(width: 1_280, height: 760)
-        .commands { SessionCommands(model: model) }
+        .commands { SessionCommands() }
 
         Settings {
-            SettingsView(model: model)
+            SettingsHost(registry: windows)
         }
         .windowStyle(.hiddenTitleBar)
         .defaultSize(width: 760, height: 560)
     }
 }
 
+/// 命令始终作用于聚焦窗口的会话，而不是某个全局单例。
 private struct SessionCommands: Commands {
-    @ObservedObject var model: SessionViewModel
+    @FocusedObject private var model: SessionViewModel?
 
     var body: some Commands {
         CommandMenu("会话") {
-            Button("刷新端口") { model.refreshPorts() }
+            Button("刷新端口") { model?.refreshPorts() }
                 .keyboardShortcut("r", modifiers: .command)
-                .disabled(model.isConfigurationLocked)
-            Button(model.isConnected ? "断开" : "连接") { model.connectOrDisconnect() }
+                .disabled(model == nil || model?.isConfigurationLocked == true)
+            Button(model?.isConnected == true ? "断开" : "连接") { model?.connectOrDisconnect() }
                 .keyboardShortcut("k", modifiers: .command)
+                .disabled(model == nil)
         }
         CommandMenu("发送") {
-            Button("发送当前内容") { model.sendCurrentText() }
+            Button("发送当前内容") { model?.sendCurrentText() }
                 .keyboardShortcut(.return, modifiers: .command)
-                .disabled(!model.canSend)
-            Button(model.isAutoSending ? "停止循环" : "开始循环") {
+                .disabled(model?.canSend != true)
+            Button(model?.isAutoSending == true ? "停止循环" : "开始循环") {
+                guard let model else { return }
                 model.isAutoSending ? model.stopAutoSend() : model.startEditorAutoSend()
             }
             .keyboardShortcut("r", modifiers: [.command, .shift])
-            .disabled(model.isAutoSending ? false : !model.canSend)
+            .disabled(model?.isAutoSending != true && model?.canSend != true)
         }
         CommandMenu("日志") {
-            Button(logTitle) { model.toggleLogging() }
+            Button(logTitle) { model?.toggleLogging() }
                 .keyboardShortcut("l", modifiers: [.command, .shift])
+                .disabled(model == nil)
         }
         CommandMenu("视图") {
-            Button(model.isPaused ? "恢复显示" : "暂停显示") { model.togglePause() }
+            Button(model?.isPaused == true ? "恢复显示" : "暂停显示") { model?.togglePause() }
                 .keyboardShortcut("p", modifiers: [.command, .shift])
-            Button("清空记录") { model.clearRecords() }
+                .disabled(model == nil)
+            Button("清空记录") { model?.clearRecords() }
                 .keyboardShortcut(.delete, modifiers: .command)
-                .disabled(model.visibleRecords.isEmpty)
+                .disabled(model?.visibleRecords.isEmpty != false)
             Divider()
-            Button(model.showsPresets ? "隐藏预设" : "显示预设") { model.showsPresets.toggle() }
-                .keyboardShortcut("s", modifiers: [.command, .option])
+            Button(model?.showsPresets == true ? "隐藏预设" : "显示预设") {
+                model?.showsPresets.toggle()
+            }
+            .keyboardShortcut("s", modifiers: [.command, .option])
+            .disabled(model == nil)
         }
     }
 
     private var logTitle: String {
-        if case .recording = model.logStatus { return "停止记录" }
+        if case .recording? = model?.logStatus { return "停止记录" }
         return "开始记录"
     }
 }

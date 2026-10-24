@@ -26,6 +26,7 @@ struct SessionView: View {
             if phase == .active { model.refreshPorts() }
         }
         .onDisappear { model.shutdown() }
+        .focusedSceneObject(model)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("session.workspace")
     }

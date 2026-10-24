@@ -307,6 +307,36 @@ final class SerialMonitorUITests: XCTestCase {
         attachScreenshot(error, named: "state-error")
     }
 
+    @MainActor
+    func testNewWindowKeepsAnIndependentSession() {
+        let app = launch(scenario: "echo")
+        XCTAssertTrue(element(app, "session.workspace").waitForExistence(timeout: 5))
+        button(app, "session.connect-button").click()
+        XCTAssertTrue(waitForValue(element(app, "session.connection-status"), "connected"))
+
+        app.typeKey("n", modifierFlags: .command)
+
+        let statuses = app.descendants(matching: .any).matching(identifier: "session.connection-status")
+        let deadline = Date().addingTimeInterval(5)
+        while Date() < deadline, statuses.count < 2 {
+            usleep(200_000)
+        }
+        XCTAssertEqual(statuses.count, 2, "新建窗口应独立创建自己的会话")
+
+        let values = (0..<statuses.count).compactMap { statuses.element(boundBy: $0).value as? String }
+        XCTAssertTrue(values.contains("connected"), "原窗口应保持已连接")
+        XCTAssertTrue(values.contains("disconnected"), "新窗口应是一个未连接的新会话")
+
+        // 关闭新窗口只应结束它自己的会话，原窗口的连接必须保留。
+        app.typeKey("w", modifierFlags: .command)
+        let closeDeadline = Date().addingTimeInterval(5)
+        while Date() < closeDeadline, statuses.count > 1 {
+            usleep(200_000)
+        }
+        XCTAssertEqual(statuses.count, 1)
+        XCTAssertEqual(statuses.element(boundBy: 0).value as? String, "connected")
+    }
+
     private func launch(scenario: String, extraArguments: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = ["-ui-testing-scenario", scenario] + extraArguments

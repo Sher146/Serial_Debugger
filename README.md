@@ -7,7 +7,7 @@
 [![Platform](https://img.shields.io/badge/platform-macOS%2014%2B-lightgrey)](#环境要求)
 [![License](https://img.shields.io/github/license/Sher146/Serial_Debugger?label=license&color=green)](LICENSE)
 
-面向 macOS 的单窗口串口监视与调试工具，界面为简体中文。连接串口后即可实时查看收发数据：用 ASCII 或 HEX 阅读、按时间戳定位问题、以手动/循环发送和预设完成日常调试，并把整段会话写入 NDJSON 日志。
+面向 macOS 的多窗口串口监视与调试工具，界面为简体中文。连接串口后即可实时查看收发数据：用 ASCII 或 HEX 阅读、按时间戳定位问题、以手动/循环发送和预设完成日常调试，并把整段会话写入 NDJSON 日志。
 
 原生 SwiftUI 实现，无第三方依赖；发布包为 Apple Silicon 与 Intel 通用二进制，最低运行 macOS 14。
 
@@ -25,7 +25,8 @@
 
 - 自动发现本机串口（`/dev/cu.*`）；设备接入或移除后自动刷新，也可手动“刷新”
 - 完整通信参数：波特率（预设 + 自定义）、数据位、校验、停止位、流控制
-- 单一活跃会话：连接、取消、断开与重连；未连接时发送区自动禁用并给出提示
+- 每个窗口一个独立会话：各自选择端口、连接、收发与记录；关闭窗口只结束自己的会话
+- 同一端口已被其他窗口占用时拒绝连接并提示，避免两个读者静默拆流
 
 ### 接收与查看
 

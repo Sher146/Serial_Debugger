@@ -37,6 +37,8 @@
 		D00000000000000000000001 /* BaudRateCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00000000000000000000011 /* BaudRateCatalog.swift */; };
 		D00000000000000000000002 /* SerialBaudRateBridge.c in Sources */ = {isa = PBXBuildFile; fileRef = D00000000000000000000012 /* SerialBaudRateBridge.c */; };
 		E00000000000000000000001 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E00000000000000000000002 /* SettingsView.swift */; };
+		F00000000000000000000001 /* SessionWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000011 /* SessionWindow.swift */; };
+		F00000000000000000000002 /* SerialPortLeaseBook.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000012 /* SerialPortLeaseBook.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -89,6 +91,8 @@
 		D00000000000000000000011 /* BaudRateCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaudRateCatalog.swift; sourceTree = "<group>"; };
 		D00000000000000000000012 /* SerialBaudRateBridge.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = SerialBaudRateBridge.c; sourceTree = "<group>"; };
 		E00000000000000000000002 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		F00000000000000000000011 /* SessionWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionWindow.swift; sourceTree = "<group>"; };
+		F00000000000000000000012 /* SerialPortLeaseBook.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SerialPortLeaseBook.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -122,6 +126,7 @@
 			isa = PBXGroup;
 			children = (
 				A00000000000000000000011 /* SerialMonitorApp.swift */,
+				F00000000000000000000011 /* SessionWindow.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -210,6 +215,7 @@
 				A0000000000000000000001D /* LogServicing.swift */,
 				A0000000000000000000001E /* TXSendQueue.swift */,
 				A0000000000000000000001F /* SessionCoordinator.swift */,
+				F00000000000000000000012 /* SerialPortLeaseBook.swift */,
 			);
 			path = SerialMonitor/Application;
 			sourceTree = "<group>";
@@ -409,6 +415,8 @@
 				B00000000000000000000005 /* VisualEffectsSupport.swift in Sources */,
 				B00000000000000000000006 /* Localization.swift in Sources */,
 				B00000000000000000000007 /* WindowConfigurationBridge.swift in Sources */,
+				F00000000000000000000001 /* SessionWindow.swift in Sources */,
+				F00000000000000000000002 /* SerialPortLeaseBook.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
