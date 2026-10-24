@@ -70,6 +70,9 @@ public actor POSIXSerialPortAdapter: SerialPorting {
 
         do {
             try configure(descriptor, with: configuration)
+            // 端口关闭期间驱动仍会累积接收字节，且按当时的线路参数采样。open 后第一次
+            // read 会把这些过期字节原样交上来，表现为会话首行乱码；这里直接丢弃。
+            _ = tcflush(descriptor, TCIFLUSH)
         } catch {
             Darwin.close(descriptor)
             throw error

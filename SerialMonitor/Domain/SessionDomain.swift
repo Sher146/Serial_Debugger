@@ -288,7 +288,11 @@ enum HexCodec {    static func decode(_ text: String, additionalSeparators: Char
 
 enum TextPayloadCodec {
     static func decodeForDisplay(_ data: Data, encoding: TextEncodingPreference = .utf8) -> String {
-        String(data: data, encoding: encoding.stringEncoding) ?? String(repeating: "\u{FFFD}", count: max(1, data.count))
+        if encoding == .utf8 {
+            // 逐非法子序列替换：单个坏字节只损失自己，不会把整行可读文本变成等长的替换符。
+            return String(decoding: data, as: UTF8.self)
+        }
+        return String(data: data, encoding: encoding.stringEncoding) ?? String(repeating: "\u{FFFD}", count: max(1, data.count))
     }
 
     static func encode(_ text: String, encoding: TextEncodingPreference = .utf8) -> Data {

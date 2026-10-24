@@ -92,6 +92,31 @@ final class POSIXSerialPortAdapterPTYTests: XCTestCase {
         XCTAssertEqual(received, payload)
     }
 
+    func testOpenDiscardsBytesQueuedBeforeThePortWasOpened() async throws {
+        let terminal = try PseudoTerminal()
+        let adapter = POSIXSerialPortAdapter()
+        defer {
+            terminal.closeMaster()
+            terminal.closeSlave()
+        }
+
+        // 模拟端口关闭期间驱动已缓存的接收字节（现实中按过期线路参数采样，多为乱码）。
+        let stale = Data([0xC8, 0xFD, 0x0A])
+        let staleWritten = stale.withUnsafeBytes { Darwin.write(terminal.master, $0.baseAddress, stale.count) }
+        XCTAssertEqual(staleWritten, stale.count)
+
+        try await adapter.open(configuration: SerialConfiguration(path: terminal.slavePath))
+        var iterator = (await adapter.incomingBytes()).makeAsyncIterator()
+        try await Task.sleep(for: .milliseconds(25))
+        let fresh = Data([0x52, 0x58, 0x0A])
+        let freshWritten = fresh.withUnsafeBytes { Darwin.write(terminal.master, $0.baseAddress, fresh.count) }
+        XCTAssertEqual(freshWritten, fresh.count)
+
+        let received = try await iterator.next()
+        await adapter.close()
+        XCTAssertEqual(received, fresh)
+    }
+
     func testCloseIsIdempotentAndSubsequentWriteFails() async throws {
         let terminal = try PseudoTerminal()
         let adapter = POSIXSerialPortAdapter()

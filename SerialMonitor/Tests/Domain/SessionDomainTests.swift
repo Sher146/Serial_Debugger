@@ -90,6 +90,14 @@ final class SessionDomainTests: XCTestCase {
         XCTAssertEqual(TextPayloadCodec.decodeForDisplay(Data([0xFF])), "�")
     }
 
+    func testUTF8DecodingReplacesOnlyInvalidSubsequences() {
+        let mixed = Data("I (525743) gateway_uart: ok".utf8) + Data([0xFF, 0xFE])
+        XCTAssertEqual(TextPayloadCodec.decodeForDisplay(mixed), "I (525743) gateway_uart: ok��")
+
+        let truncated = Data("ok ".utf8) + Data([0xE4, 0xB8])
+        XCTAssertEqual(TextPayloadCodec.decodeForDisplay(truncated), "ok �")
+    }
+
     func testStateMachineRejectsIllegalTransition() {
         var machine = SessionStateMachine()
         XCTAssertFalse(machine.transition(to: .connected(SerialConfiguration(path: "/dev/null"))))
